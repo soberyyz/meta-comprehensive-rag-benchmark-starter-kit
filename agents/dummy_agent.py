@@ -2,6 +2,14 @@ import random
 import string
 from typing import Dict, List, Optional
 
+import requests
+import torch
+from PIL import Image
+from transformers import MllamaForConditionalGeneration, AutoProcessor
+from typing import Optional, Dict, List, Any, Callable
+import random
+import string
+
 
 class DummyAgent:
     def __init__(self, model_id="meta-llama/Llama-3.2-11B-Vision-Instruct", max_gen_len=64):
