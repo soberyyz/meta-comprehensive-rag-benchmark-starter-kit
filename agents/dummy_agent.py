@@ -16,6 +16,7 @@ class DummyAgent:
         """Initialize the agent with a model ID from HF. As per the challenge requirement, we only use LLaMA model"""
         self.model_id = model_id
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        print("Using device:", self.device)
         self.model = MllamaForConditionalGeneration.from_pretrained(self.model_id, 
                                                                     torch_dtype=torch.bfloat16, 
                                                                     device_map='auto')
