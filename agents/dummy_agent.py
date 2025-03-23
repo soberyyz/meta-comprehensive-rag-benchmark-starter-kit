@@ -22,6 +22,7 @@ class DummyAgent:
                                                                     device_map='auto')
         self.processor = AutoProcessor.from_pretrained(self.model_id)
         self.max_gen_len = max_gen_len
+        print("loaded models")
     
     def generate_response(self, query: str, image: Optional[str] = None, conversation_history: Optional[List[Dict[str, str]]] = None) -> str:
         """Generate a response using the model given the query and image. We currently don't consider multi_turn
@@ -58,10 +59,10 @@ class DummyAgent:
                 {"type": "text", "text": prompt + query}
             ]}
         )
-        # print('QUERY', query)
+        print('QUERY', query)
         input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
-        # print('input_text', input_text)
-        # print('conversation_history', conversation_history)
+        print('input_text', input_text)
+        print('conversation_history', conversation_history)
         inputs = self.processor(
             image,
             input_text,
