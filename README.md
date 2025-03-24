@@ -144,7 +144,7 @@ Moreover, the following restrictions will also be imposed:
 ## 🏁 Baseline
 We include three baselines for demonstration purposes:
 1. RandomAgent: A simple agent that generates random responses
-2. LlamaVisionModel: A vision-language model based on Meta's Llama 3.2 11B Vision Instruct model
+2. LlamaVisionModel: A vision-language model based on Meta's LLaMA 3.2 11B Vision Instruct model
 3. SimpleRAGAgent: A RAG-based agent that uses the unified search pipeline for retrieving relevant information
 
 You can read more about them in [docs/baselines.md](docs/baselines.md).
