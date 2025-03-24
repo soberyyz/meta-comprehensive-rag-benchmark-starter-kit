@@ -112,7 +112,7 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
 
 4. **Install** competition specific dependencies!
     ```bash
-    cd meta-comphrehensive-rag-benchmark-starter-kit
+    cd meta-crag-submission
     pip install -r requirements.txt
     ```
 
@@ -120,7 +120,7 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
 
 6. Test your agent locally using `python local_evaluation.py`.
 
-7. Accept the Challenge Rules on the main [challenge page](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024) by clicking on the **Participate** button. Also accept the Challenge Rules on the Task specific page (link on the challenge page) that you want to submit to.
+7. Accept the Challenge Rules on the main [challenge page](https://www.aicrowd.com/challenges/meta-crag-mm-challenge-2025/challenge_rules) by clicking on the **Participate** button. Also accept the Challenge Rules on the Task specific page (link on the challenge page) that you want to submit to.
 
 8. Make a submission as described in [How to make a submission](#-how-to-make-a-submission) section.
 
