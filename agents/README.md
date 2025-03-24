@@ -1,8 +1,10 @@
 # 🤖 CRAG-MM Agent Development Guide
 
-Welcome to the CRAG-MM agent development playground! This directory is where participants can implement their vision-language models for the challenge. While this is the recommended location for your agent implementation, you're free to organize your code as you prefer.
+Welcome to the CRAG-MM agent development playground! This directory is where participants can implement their vision-language models for the challenge. 
 
-## 🎯 Project Structure
+We recommend that you put everything you need for the agent to run in this repo for a smoother submission/evaluation process. However, you're free to organize your code as you prefer.
+
+## 🎯 Structure of This Directory
 
 ```
 agents/

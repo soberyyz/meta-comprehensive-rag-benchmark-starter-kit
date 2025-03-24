@@ -6,8 +6,8 @@
 This repository is the **Submission template and Starter kit** for the Meta CRAG-MM challenge (KDD Cup 2025)! Clone the repository to compete now!
 
 **This repository contains**:
-*  **Documentation** on how to submit your models to the leaderboard
-*  **The procedure** for best practices and information on how we evaluate your model
+*  **Documentation** on how to submit your agents to the leaderboard
+*  **The procedure** for best practices and information on how we evaluate your agent
 *  **Starter code** for you to get started!
 
 # Table of Contents
@@ -17,12 +17,11 @@ This repository is the **Submission template and Starter kit** for the Meta CRAG
 3. [Tasks](#-tasks)
 4. [Evaluation Metrics](#-evaluation-metrics)
 5. [Getting Started](#-getting-started)
-   - [How to write your own model?](#️-how-to-write-your-own-model)
+   - [How to write your own agent?](#️-how-to-write-your-own-agent)
    - [How to start participating?](#-how-to-start-participating)
       - [Setup](#setup)
       - [How to make a submission?](#-how-to-make-a-submission)
       - [What hardware does my code run on?](#-what-hardware-does-my-code-run-on-)
-      - [How are my model responses parsed by the evaluators?](#-how-are-my-model-responses-parsed-by-the-evaluators-)
       - [Baselines](#baselines)
 6. [Frequently Asked Questions](#-frequently-asked-questions)
 7. [Important Links](#-important-links)
@@ -87,13 +86,13 @@ We adapt the method in [1], which is closest to the information-seeking flavor o
 
 1. **Sign up** to join the competition [on the AIcrowd website](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024).
 2. **Fork** this starter kit repository. You can use [this link](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024/meta-comphrehensive-rag-benchmark-starter-kit/-/forks/new) to create a fork.
-3. **Clone** your forked repo and start developing your model.
-4. **Develop** your model(s) following the template in [how to write your own model](#how-to-write-your-own-model) section.
+3. **Clone** your forked repo and start developing your agent.
+4. **Develop** your agent(s) following the template in [how to write your own agent](#how-to-write-your-own-agent) section.
 5. [**Submit**](#-how-to-make-a-submission) your trained models to [AIcrowd Gitlab](https://gitlab.aicrowd.com) for evaluation.
 
-# ✍️ How to write your own model?
+# ✍️ How to write your own agent?
 
-Please follow the instructions in [models/README.md](models/README.md) for instructions and examples on how to write your own models for this competition.
+Please follow the instructions in [agents/README.md](agents/README.md) for instructions and examples on how to write your own agents for this competition.
 
 # 🚴 How to start participating?
 
@@ -117,9 +116,9 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
     pip install -r requirements.txt
     ```
 
-5. Write your own model as described in [How to write your own model](#how-to-write-your-own-model) section.
+5. Write your own agent as described in [How to write your own agent](#how-to-write-your-own-agent) section.
 
-6. Test your model locally using `python local_evaluation.py`.
+6. Test your agent locally using `python local_evaluation.py`.
 
 7. Accept the Challenge Rules on the main [challenge page](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024) by clicking on the **Participate** button. Also accept the Challenge Rules on the Task specific page (link on the challenge page) that you want to submit to.
 
@@ -146,7 +145,7 @@ Moreover, the following restrictions will also be imposed:
 ## 🏁 Baseline
 We include three baselines for demonstration purposes:
 1. RandomAgent: A simple agent that generates random responses
-2. LlamaVisionModel: A vision-language model based on Meta's LLaMA 3.2 11B Vision Instruct model
+2. LlamaVisionModel: A vision-language agent based on Meta's LLaMA 3.2 11B Vision Instruct model
 3. SimpleRAGAgent: A RAG-based agent that uses the unified search pipeline for retrieving relevant information
 
 You can read more about them in [docs/baselines.md](docs/baselines.md).
