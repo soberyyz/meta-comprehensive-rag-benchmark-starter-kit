@@ -12,6 +12,23 @@ import string
 
 
 class DummyAgent:
+    def __init__(self):
+        print("initializing dummy agent")
+        pass
+
+    def generate_response(
+        self,
+        query: str,
+        image: Optional[str] = None,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+    ) -> str:
+        return "".join(
+            random.choice(string.ascii_letters + " ")
+            for _ in range(random.randint(2, 16))
+        )
+
+
+class LlamaVisionModel:
     def __init__(self, model_id="meta-llama/Llama-3.2-11B-Vision-Instruct", max_gen_len=64):
         """Initialize the agent with a model ID from HF. As per the challenge requirement, we only use LLaMA model"""
         self.model_id = model_id
