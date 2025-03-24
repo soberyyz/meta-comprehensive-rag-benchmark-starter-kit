@@ -1,9 +1,9 @@
 ![banner image](https://images.aicrowd.com/raw_images/challenges/social_media_image_file/1155/3d44411079169ec5776a.jpg)
 [![Discord](https://img.shields.io/discord/565639094860775436.svg)](https://discord.gg/yWurtB2huX)
 
-# Meta CRAG-MM: Comprehensive RAG Benchmark for Multi-modal, Multi-turn Challenge
+# Meta CRAG-MM: Comprehensive RAG Benchmark for Multi-Modal, Multi-Turn Dialogue Challenge
 
-This repository is the **Submission template and Starter kit** for the Meta CRAG-MM challenge! Clone the repository to compete now!
+This repository is the **Submission template and Starter kit** for the Meta CRAG-MM challenge (KDD Cup 2025)! Clone the repository to compete now!
 
 **This repository contains**:
 *  **Documentation** on how to submit your models to the leaderboard
@@ -31,9 +31,9 @@ This repository is the **Submission template and Starter kit** for the Meta CRAG
 
 Have you tried asking smart glasses to tell you the history of a landmark when travelling to a new country? Have you used wearable devices to translate foreign languages reali-time to order food in a foreign resturant? Have you ever forgoten where you parked your car and thankfully found the location stored in an image remidner on your glasses? Wearable devices are revolutionizing the way people communicate, work, and entertain. To make wearable devices truly valuable in daily life, they must provide relevant and accurate information tailored to users' needs.
 
-Vision Large Language Models (VLLMs) have undergone significant advancements in recent years, empowering multi-modal understanding and visual question answering (VQA) capabilities behind smart glasses. Despite the progress, VLLMs still face a major challenge: generating hallucinated answers. Studies have shown that VLLMs encounter substantial difficulties in handling queries involving long-tail entities [1]; these models also encounter challenges for handling complex queries that require integration of different capabilities: recognition, ocr, knowledge, and generation [2].
+Vision Large Language Models (VLLMs) have undergone significant advancements in recent years, empowering multi-modal understanding and visual question answering (VQA) capabilities behind smart glasses. Despite the progress, VLLMs still face a major challenge: generating hallucinated answers. Studies have shown that VLLMs encounter substantial difficulties in handling queries involving long-tail entities; these models also encounter challenges for handling complex queries that require integration of different capabilities: recognition, ocr, knowledge, and generation.
 
-The Retrieval-Augmented Generation (RAG) paradigm has expanded to accommodate multi-modal (MM) input, and demonstrated promise in addressing the knowledge limitation of VLLM. Given an image and a question, an MM RAG system constructs a search query by synthesizing information from the image and the question, searches external sources to retrieve relevant information, and then provides grounded answers to address the question [3].
+The Retrieval-Augmented Generation (RAG) paradigm has expanded to accommodate multi-modal (MM) input, and demonstrated promise in addressing the knowledge limitation of VLLM. Given an image and a question, an MM RAG system constructs a search query by synthesizing information from the image and the question, searches external sources to retrieve relevant information, and then provides grounded answers to address the question.
 
 # 📊 Dataset
 
@@ -46,26 +46,28 @@ CRAG-MM contains two types of images: egocentric images and normal images. The e
 CRAG-MM covers 14 domains: Book, Food, General object recognition, Math and science, Nature, Pets, Plants and Gardening, Shopping, Sightseeing, Sports and games, Style and fashion, Text understanding, Vehicles, and Others, representing popular use cases that wearable device users would like to engage with. It also includes 4 types of questions, ranging from simple questions that can be answered based on the image to complex questions that require retrieving multiple sources and synthesizing an answer.
 
 ## 📁 Retrieval Contents
-The dataset includes a mock image search API and a mock web search API to simulate real-world RAG retrieval sources.
+The dataset includes a mock image search API and a mock web search API to simulate real-world knowledge sources from which RAG solutions retrieve from.
 
 # 👨‍💻👩‍💻 Tasks
 
 We designed three competition tasks:
 
-## Task #1: Single-source Augmentation
+## Task #1: Single-Source Augmentation
 Task #1 provides an image mock API to access information from an underlying image-based mock KG. The mock KG is indexed by the image, and stores structured data associated with the image; answers to the questions may or may not exist in the mock KG. The mock API takes an image as input, and returns similar images from the mock KG along with structured data associated with each image to support answer generation. This task aims to test basic answer generation capability of MM-RAG systems.
 
-## Task #2: Multi-source Augmentation
+## Task #2: Multi-Source Augmentation
 Task #2 in addition provides a web search mock API as a second retrieval source. The web pages are likely to provide useful information for answering the question, but meanwhile also contain noises. This task aims to test how well the MM-RAG system synthesizes information from different sources.
 
-## Task #3: Multi-turn QA
+## Task #3: Multi-Turn QA
 Task #3 tests the system's ability to conduct multi-turn conversations. Each conversation contains 2–6 turns. Except the first turn, questions in later turns may or may not need the image for answering the questions. Task #3 tests context understanding for smooth multi-turn conversations.
+
+**Note: Task #3 is yet open for submission.**
 
 # 📏 Evaluation Metrics
 
-We adopt exactly the same metrics and methods used in the CRAG competition to assess the performance of the MM RAG systems:
+For tasks #1 and #2, we adopt exactly the same metrics and methods used in the CRAG competition ([KDD Cup 2024](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024)) to assess the performance of the MM RAG systems. 
 
-## Single-turn QA
+## Single-Turn QA (Tasks #1 and #2)
 For each question in the evaluation set, we score the answer with:
 - Perfect (fully correct): Score 1
 - Acceptable (useful w. minor non-harmful errors): Score 0.5
@@ -74,8 +76,10 @@ For each question in the evaluation set, we score the answer with:
 
 We then use Truthfulness as the average score from all examples in the evaluation set for a given MM-RAG system. We compute an average score for each domain, and take the weighted average across all domains for the final score.
 
-## Multi-turn QA
-We adapt the method in [5], which is closest to the information-seeking flavor of conversations. In particular, we stop a conversation when the answers in two consecutive turns are wrong and consider answers to all remaining questions in the same conversation as missing–mimicking the behavior of real users when they lose trust or feel frustrated after repeated failures. We then take the average score of all multi-turn conversations.
+## Multi-Turn QA
+We adapt the method in [1], which is closest to the information-seeking flavor of conversations. In particular, we stop a conversation when the answers in two consecutive turns are wrong and consider answers to all remaining questions in the same conversation as missing–mimicking the behavior of real users when they lose trust or feel frustrated after repeated failures. We then take the average score of all multi-turn conversations.
+
+[1] Bai et al., "MT-Bench-101: A Fine-Grained Benchmark for Evaluating Large Language Models in Multi-Turn Dialogues". Available at: https://aclanthology.org/2024.acl-long.401/
 
 # 🏁 Getting Started
 
