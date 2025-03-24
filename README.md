@@ -47,7 +47,7 @@ CRAG-MM covers 14 domains: Book, Food, General object recognition, Math and scie
 ## 📁 Retrieval Contents
 The dataset includes a mock image search API and a mock web search API to simulate real-world knowledge sources from which RAG solutions retrieve from.
 
-You can find the implementations and sample usage of the mock APIs [here](). 
+You can find the implementations and sample usage of the mock APIs [here]().
 
 # 👨‍💻👩‍💻 Tasks
 
@@ -66,7 +66,7 @@ Task #3 tests the system's ability to conduct multi-turn conversations. Each con
 
 # 📏 Evaluation Metrics
 
-For tasks #1 and #2, we adopt exactly the same metrics and methods used in the CRAG competition ([KDD Cup 2024](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024)) to assess the performance of the MM RAG systems. 
+For tasks #1 and #2, we adopt exactly the same metrics and methods used in the CRAG competition ([KDD Cup 2024](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024)) to assess the performance of the MM RAG systems.
 
 ## Single-Turn QA (Tasks #1 and #2)
 For each question in the evaluation set, we score the answer with:
@@ -84,8 +84,8 @@ We adapt the method in [1], which is closest to the information-seeking flavor o
 
 # 🏁 Getting Started
 
-1. **Sign up** to join the competition [on the AIcrowd website](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024).
-2. **Fork** this starter kit repository. You can use [this link](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024/meta-comphrehensive-rag-benchmark-starter-kit/-/forks/new) to create a fork.
+1. **Sign up** to join the competition [on the AIcrowd website](https://www.aicrowd.com/challenges/meta-crag-mm-challenge-2025).
+2. **Fork** this starter kit repository. You can use [this link](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/forks/new) to create a fork.
 3. **Clone** your forked repo and start developing your agent.
 4. **Develop** your agent(s) following the template in [how to write your own agent](#how-to-write-your-own-agent) section.
 5. [**Submit**](#-how-to-make-a-submission) your trained models to [AIcrowd Gitlab](https://gitlab.aicrowd.com) for evaluation.
@@ -126,7 +126,7 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
 
 ## 📮 How to make a submission?
 
-Please follow the instructions in [docs/submission.md](docs/submission.md) to make your first submission. 
+Please follow the instructions in [docs/submission.md](docs/submission.md) to make your first submission.
 This also includes instructions on [specifying your software runtime](docs/submission.md#specifying-software-runtime-and-dependencies), [code structure](docs/submission.md#code-structure-guidelines), [submitting to different tracks](docs/submission.md#submitting-to-different-tracks).
 
 **Note**: **Remember to accept the Challenge Rules** on the challenge page, **and** the task page before making your first submission.
