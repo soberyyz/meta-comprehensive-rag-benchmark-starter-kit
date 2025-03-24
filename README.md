@@ -48,6 +48,8 @@ CRAG-MM covers 14 domains: Book, Food, General object recognition, Math and scie
 ## 📁 Retrieval Contents
 The dataset includes a mock image search API and a mock web search API to simulate real-world knowledge sources from which RAG solutions retrieve from.
 
+You can find the implementations and sample usage of the mock APIs [here](). 
+
 # 👨‍💻👩‍💻 Tasks
 
 We designed three competition tasks:
