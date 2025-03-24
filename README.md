@@ -133,7 +133,7 @@ This also includes instructions on [specifying your software runtime](docs/submi
 
 ## 💻 What hardware does my code run on?
 All submissions will be run on a single G6e instance with an NVIDIA L40s GPU with 48GB of GPU memory on AWS. Please note that:
-- LLaMA 3.2 11B-Vision in full precision can run directly
+- LLaMA 3.2 11B-Vision and Pixtral 12B in full precision can run directly
 - Llama 3.2 90B-Vision in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
 - NVIDIA L40s is not using the latest architectures and hence might not be compatible with certain acceleration toolkits, so please make sure the submitted solution is compatible with the configuration
 
