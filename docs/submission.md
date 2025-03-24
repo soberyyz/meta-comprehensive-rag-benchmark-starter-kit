@@ -8,7 +8,7 @@ Ready to showcase your **CRAG-MM** solution on the leaderboard? Follow the steps
 
 ### 1.1 Clone the Starter Kit 🏁
 
-1. **Fork** the official **Meta CRAG-MM Starter Kit** repository from the challenge page.
+1. **Fork** the official **[Meta CRAG-MM Starter Kit](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/tree/main)** repository from the challenge page.
 2. **Clone** your fork locally:
    ```bash
    git clone git@gitlab.aicrowd.com:<YOUR-AICROWD-USERNAME>/<YOUR-FORK>.git
@@ -45,8 +45,8 @@ In your repository’s root directory, you will find or create an `aicrowd.json`
    - `"multi-source-augmentation"`
    - `"multi-turn-qa"`
 
-2. **`gpu`:** `true` if your solution requires GPU acceleration, otherwise `false`.  
-3. **`hf_models`:** A list of Hugging Face models your agent depends on. These models **must** be publicly available **or** the `aicrowd` HF account must have access.  
+2. **`gpu`:** `true` if your solution requires GPU acceleration, otherwise `false`.
+3. **`hf_models`:** A list of Hugging Face models your agent depends on. These models **must** be publicly available **or** the `aicrowd` HF account must have access.
 
 > **Important**: If your model is private, grant the [`aicrowd`](https://huggingface.co/aicrowd) user permission to pull it, or your submission **will fail**.
 
@@ -173,8 +173,8 @@ CMD ["python", "local_evaluation.py", "--dataset_type", "single-turn", "--split"
 
 In `aicrowd.json`, set `"challenge_id"` to one of:
 
-1. **`"single-source-augmentation"`**  
-2. **`"multi-source-augmentation"`**  
+1. **`"single-source-augmentation"`**
+2. **`"multi-source-augmentation"`**
 3. **`"multi-turn-qa"`**
 
 Whichever ID you choose determines **which task** your submission competes in. 🏆
@@ -185,8 +185,8 @@ Whichever ID you choose determines **which task** your submission competes in. �
 
 - Write or refine your agent code in `agents/`
 - Update `aicrowd.json` with the correct `challenge_id` and `hf_models`
-- Tag your submission with `submission-<version>` and push it. 
-``` 
+- Tag your submission with `submission-<version>` and push it.
+```
 git commit -am 'Your message'
 git tag -am 'submission-<A_GREAT_NAME>' submission-<A_GREAT_NAME>
 git push origin submission-<A_GREAT_NAME>
