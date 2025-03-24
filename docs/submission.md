@@ -181,7 +181,19 @@ Whichever ID you choose determines **which task** your submission competes in. �
 
 ---
 
-## 7. Troubleshooting & Best Practices
+## 7. Next Steps
+
+- Write or refine your agent code in `agents/`
+- Update `aicrowd.json` with the correct `challenge_id` and `hf_models`
+- Tag your submission with `submission-<version>` and push it. 
+``` 
+git commit -am 'Your message'
+git tag -am 'submission-<A_GREAT_NAME>' submission-<A_GREAT_NAME>
+git push origin submission-<A_GREAT_NAME>
+```
+- 🎉 Watch your scoreboard results on the challenge page!
+
+## 8. Troubleshooting & Best Practices
 
 1. **Model Access**: Confirm that the **`aicrowd`** Hugging Face account has permission to pull your private models.
 2. **Local Testing**: Use `python local_evaluation.py` to confirm basic correctness before tagging a submission.
@@ -192,11 +204,5 @@ Whichever ID you choose determines **which task** your submission competes in. �
 
 ---
 
-## 8. Next Steps
-
-- Write or refine your agent code in `agents/`
-- Update `aicrowd.json` with the correct `challenge_id` and `hf_models`
-- Tag your submission with `submission-<version>`
-- 🎉 Watch your scoreboard results on the challenge page!
 
 **We can’t wait to see your creative solutions!** 🤖🌟 Happy hacking!
