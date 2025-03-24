@@ -1,7 +1,8 @@
-FROM python:3.11-slim-bullseye
+FROM python:3.11-slim-bookworm
 
+RUN pip install --progress-bar off --no-cache-dir -U pip==21.0.1
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
+RUN pip install --progress-bar off --no-cache-dir -r /tmp/requirements.txt
 
 WORKDIR /home/aicrowd
 COPY . .
