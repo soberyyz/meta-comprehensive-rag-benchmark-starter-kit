@@ -106,8 +106,8 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
 
 3. **Clone the repository**
     ```bash
-    git clone git@gitlab.aicrowd.com:<YOUR-AICROWD-USERNAME>/meta-comphrehensive-rag-benchmark-starter-kit.git
-    cd meta-comphrehensive-rag-benchmark-starter-kit
+    git clone git@gitlab.aicrowd.com:<YOUR-AICROWD-USERNAME>/meta-crag-submission.git
+    cd meta-crag-submission
     ```
 
 4. **Install** competition specific dependencies!
