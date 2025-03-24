@@ -102,7 +102,7 @@ Please follow the instructions in [agents/README.md](agents/README.md) for instr
 
 You can add your SSH Keys to your GitLab account by going to your profile settings [here](https://gitlab.aicrowd.com/-/profile/keys). If you do not have SSH Keys, you will first need to [generate one](https://docs.gitlab.com/ee/user/ssh.html).
 
-2. **Fork the repository**. You can use [this link](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024/meta-comphrehensive-rag-benchmark-starter-kit/-/forks/new) to create a fork.
+2. **Fork the repository**. You can use [this link](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/forks/new) to create a fork.
 
 3. **Clone the repository**
     ```bash
