@@ -131,10 +131,10 @@ This also includes instructions on [specifying your software runtime](docs/submi
 **Note**: **Remember to accept the Challenge Rules** on the challenge page, **and** the task page before making your first submission.
 
 ## 💻 What hardware does my code run on?
-All submissions will be run on a single G6e instance with a NVIDIA L40s GPU with 48GB of GPU memory on AWS. Please note that:
-- Llama 3.2 11B in full precision can run directly
-- Llama 3.2 90B in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
-- NVIDIA L40 is not using the latest architectures and hence might not be compatible with certain acceleration toolkits, so please make sure the submitted solution is compatible with the configuration
+All submissions will be run on a single G6e instance with an NVIDIA L40s GPU with 48GB of GPU memory on AWS. Please note that:
+- LLaMA 3.2 11B-Vision in full precision can run directly
+- Llama 3.2 90B-Vision in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
+- NVIDIA L40s is not using the latest architectures and hence might not be compatible with certain acceleration toolkits, so please make sure the submitted solution is compatible with the configuration
 
 Moreover, the following restrictions will also be imposed:
 - Network connection will be disabled
@@ -145,7 +145,7 @@ Moreover, the following restrictions will also be imposed:
 We include three baselines for demonstration purposes:
 1. RandomAgent: A simple agent that generates random responses
 2. LlamaVisionModel: A vision-language model based on Meta's Llama 3.2 11B Vision Instruct model
-3. SimpleRAGAgent: A RAG-based agent that uses unified search pipeline for retrieving relevant information
+3. SimpleRAGAgent: A RAG-based agent that uses the unified search pipeline for retrieving relevant information
 
 You can read more about them in [docs/baselines.md](docs/baselines.md).
 
