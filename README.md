@@ -1,93 +1,163 @@
-# Meta Crag Submission
+![banner image](https://aicrowd-production.s3.eu-central-1.amazonaws.com/challenge_images/meta-kdd-cup-24/meta_kdd_cup_24_banner.jpg)
+[![Discord](https://img.shields.io/discord/565639094860775436.svg)](https://discord.gg/yWurtB2huX)
 
+# Meta CRAG-MM: Comprehensive RAG Benchmark for Multi-modal, Multi-turn Challenge
 
+This repository is the **Submission template and Starter kit** for the Meta CRAG-MM challenge! Clone the repository to compete now!
 
-## Getting started
+**This repository contains**:
+*  **Documentation** on how to submit your models to the leaderboard
+*  **The procedure** for best practices and information on how we evaluate your model
+*  **Starter code** for you to get started!
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+# Table of Contents
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+1. [Competition Overview](#-competition-overview)
+2. [Dataset](#-dataset)
+3. [Tasks](#-tasks)
+4. [Evaluation Metrics](#-evaluation-metrics)
+5. [Getting Started](#-getting-started)
+   - [How to write your own model?](#️-how-to-write-your-own-model)
+   - [How to start participating?](#-how-to-start-participating)
+      - [Setup](#setup)
+      - [How to make a submission?](#-how-to-make-a-submission)
+      - [What hardware does my code run on?](#-what-hardware-does-my-code-run-on-)
+      - [How are my model responses parsed by the evaluators?](#-how-are-my-model-responses-parsed-by-the-evaluators-)
+      - [Baselines](#baselines)
+6. [Frequently Asked Questions](#-frequently-asked-questions)
+7. [Important Links](#-important-links)
 
-## Add your files
+# 📖 Competition Overview
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+Have you tried asking smart glasses to tell you the history of a landmark when travelling to a new country? Have you used wearable devices to translate foreign languages reali-time to order food in a foreign resturant? Have you ever forgoten where you parked your car and thankfully found the location stored in an image remidner on your glasses? Wearable devices are revolutionizing the way people communicate, work, and entertain. To make wearable devices truly valuable in daily life, they must provide relevant and accurate information tailored to users' needs.
 
-```
-cd existing_repo
-git remote add origin https://gitlab.aicrowd.com/jyotish/meta-crag-submission.git
-git branch -M main
-git push -uf origin main
-```
+Vision Large Language Models (VLLMs) have undergone significant advancements in recent years, empowering multi-modal understanding and visual question answering (VQA) capabilities behind smart glasses. Despite the progress, VLLMs still face a major challenge: generating hallucinated answers. Studies have shown that VLLMs encounter substantial difficulties in handling queries involving long-tail entities [1]; these models also encounter challenges for handling complex queries that require integration of different capabilities: recognition, ocr, knowledge, and generation [2].
 
-## Integrate with your tools
+The Retrieval-Augmented Generation (RAG) paradigm has expanded to accommodate multi-modal (MM) input, and demonstrated promise in addressing the knowledge limitation of VLLM. Given an image and a question, an MM RAG system constructs a search query by synthesizing information from the image and the question, searches external sources to retrieve relevant information, and then provides grounded answers to address the question [3].
 
-- [ ] [Set up project integrations](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/settings/integrations)
+# 📊 Dataset
 
-## Collaborate with your team
+CRAG-MM contains three parts of data: the image set, the QA set, and the contents for retrieval.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+## 🖼️ Image set
+CRAG-MM contains two types of images: egocentric images and normal images. The egocentric images were collected using RayBan Meta Smart Glasses 4 from first-person perspective. The normal images were collected from publicly available images on the web.
 
-## Test and Deploy
+## 📝 Question Answer Pairs
+CRAG-MM covers 14 domains: Book, Food, General object recognition, Math and science, Nature, Pets, Plants and Gardening, Shopping, Sightseeing, Sports and games, Style and fashion, Text understanding, Vehicles, and Others, representing popular use cases that wearable device users would like to engage with. It also includes 4 types of questions, ranging from simple questions that can be answered based on the image to complex questions that require retrieving multiple sources and synthesizing an answer.
 
-Use the built-in continuous integration in GitLab.
+## 📁 Retrieval Contents
+The dataset includes a mock image search API and a mock web search API to simulate real-world RAG retrieval sources.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+# 👨‍💻👩‍💻 Tasks
 
-***
+We designed three competition tasks:
 
-# Editing this README
+## Task #1: Single-source Augmentation
+Task #1 provides an image mock API to access information from an underlying image-based mock KG. The mock KG is indexed by the image, and stores structured data associated with the image; answers to the questions may or may not exist in the mock KG. The mock API takes an image as input, and returns similar images from the mock KG along with structured data associated with each image to support answer generation. This task aims to test basic answer generation capability of MM-RAG systems.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Task #2: Multi-source Augmentation
+Task #2 in addition provides a web search mock API as a second retrieval source. The web pages are likely to provide useful information for answering the question, but meanwhile also contain noises. This task aims to test how well the MM-RAG system synthesizes information from different sources.
 
-## Suggestions for a good README
+## Task #3: Multi-turn QA
+Task #3 tests the system's ability to conduct multi-turn conversations. Each conversation contains 2–6 turns. Except the first turn, questions in later turns may or may not need the image for answering the questions. Task #3 tests context understanding for smooth multi-turn conversations.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+# 📏 Evaluation Metrics
 
-## Name
-Choose a self-explaining name for your project.
+We adopt exactly the same metrics and methods used in the CRAG competition to assess the performance of the MM RAG systems:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Single-turn QA
+For each question in the evaluation set, we score the answer with:
+- Perfect (fully correct): Score 1
+- Acceptable (useful w. minor non-harmful errors): Score 0.5
+- Missing (e.g., "I don't know"): Score 0
+- Incorrect (wrong or irrelevant): Score -1
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+We then use Truthfulness as the average score from all examples in the evaluation set for a given MM-RAG system. We compute an average score for each domain, and take the weighted average across all domains for the final score.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Multi-turn QA
+We adapt the method in [5], which is closest to the information-seeking flavor of conversations. In particular, we stop a conversation when the answers in two consecutive turns are wrong and consider answers to all remaining questions in the same conversation as missing–mimicking the behavior of real users when they lose trust or feel frustrated after repeated failures. We then take the average score of all multi-turn conversations.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+# 🏁 Getting Started
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+1. **Sign up** to join the competition [on the AIcrowd website](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024).
+2. **Fork** this starter kit repository. You can use [this link](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024/meta-comphrehensive-rag-benchmark-starter-kit/-/forks/new) to create a fork.
+3. **Clone** your forked repo and start developing your model.
+4. **Develop** your model(s) following the template in [how to write your own model](#how-to-write-your-own-model) section.
+5. [**Submit**](#-how-to-make-a-submission) your trained models to [AIcrowd Gitlab](https://gitlab.aicrowd.com) for evaluation.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+# ✍️ How to write your own model?
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Please follow the instructions in [models/README.md](models/README.md) for instructions and examples on how to write your own models for this competition.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+# 🚴 How to start participating?
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## Setup
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+1. **Add your SSH key** to AIcrowd GitLab
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+You can add your SSH Keys to your GitLab account by going to your profile settings [here](https://gitlab.aicrowd.com/-/profile/keys). If you do not have SSH Keys, you will first need to [generate one](https://docs.gitlab.com/ee/user/ssh.html).
 
-## License
-For open source projects, say how it is licensed.
+2. **Fork the repository**. You can use [this link](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024/meta-comphrehensive-rag-benchmark-starter-kit/-/forks/new) to create a fork.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+3. **Clone the repository**
+    ```bash
+    git clone git@gitlab.aicrowd.com:<YOUR-AICROWD-USERNAME>/meta-comphrehensive-rag-benchmark-starter-kit.git
+    cd meta-comphrehensive-rag-benchmark-starter-kit
+    ```
+
+4. **Install** competition specific dependencies!
+    ```bash
+    cd meta-comphrehensive-rag-benchmark-starter-kit
+    pip install -r requirements.txt
+    ```
+
+5. Write your own model as described in [How to write your own model](#how-to-write-your-own-model) section.
+
+6. Test your model locally using `python local_evaluation.py`.
+
+7. Accept the Challenge Rules on the main [challenge page](https://www.aicrowd.com/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2024) by clicking on the **Participate** button. Also accept the Challenge Rules on the Task specific page (link on the challenge page) that you want to submit to.
+
+8. Make a submission as described in [How to make a submission](#-how-to-make-a-submission) section.
+
+## 📮 How to make a submission?
+
+Please follow the instructions in [docs/submission.md](docs/submission.md) to make your first submission. 
+This also includes instructions on [specifying your software runtime](docs/submission.md#specifying-software-runtime-and-dependencies), [code structure](docs/submission.md#code-structure-guidelines), [submitting to different tracks](docs/submission.md#submitting-to-different-tracks).
+
+**Note**: **Remember to accept the Challenge Rules** on the challenge page, **and** the task page before making your first submission.
+
+## 💻 What hardware does my code run on?
+All submissions will be run on a single G6e instance with a NVIDIA L40s GPU with 48GB of GPU memory on AWS. Please note that:
+- Llama 3.2 11B in full precision can run directly
+- Llama 3.2 90B in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
+- NVIDIA L40 is not using the latest architectures and hence might not be compatible with certain acceleration toolkits, so please make sure the submitted solution is compatible with the configuration
+
+Moreover, the following restrictions will also be imposed:
+- Network connection will be disabled
+- Each example will have a time-out limit of 30 seconds
+- To encourage concise answers, each answer will be truncated to 75 bpe tokens in the auto-eval
+
+## 🏁 Baseline
+We include three baselines for demonstration purposes:
+1. RandomAgent: A simple agent that generates random responses
+2. LlamaVisionModel: A vision-language model based on Meta's Llama 3.2 11B Vision Instruct model
+3. SimpleRAGAgent: A RAG-based agent that uses unified search pipeline for retrieving relevant information
+
+You can read more about them in [docs/baselines.md](docs/baselines.md).
+
+# ❓ Frequently Asked Questions
+
+## Which track is this starter kit for?
+This starter kit can be used to submit to any of the three tasks. You can find more information in [docs/submission.md#submitting-to-different-tracks](docs/submission.md#submitting-to-different-tracks).
+
+## Where can I know more about the dataset schema?
+The dataset schema is described in [docs/dataset.md](docs/dataset.md).
+
+**Best of Luck** :tada: :tada:
+
+# 📎 Important links
+
+- 💪 Challenge Page: https://www.aicrowd.com/challenges/meta-crag-mm-challenge-2025
+- 🗣 Discussion Forum: https://www.aicrowd.com/challenges/meta-crag-mm-challenge-2025/discussion
+- 🏆 Leaderboard: https://www.aicrowd.com/challenges/meta-crag-mm-challenge-2025/leaderboards
+- 📧 Contact: crag-kddcup-2025@meta.com
