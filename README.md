@@ -87,7 +87,7 @@ We adapt the method in [1], which is closest to the information-seeking flavor o
 1. **Sign up** to join the competition [on the AIcrowd website](https://www.aicrowd.com/challenges/meta-crag-mm-challenge-2025).
 2. **Fork** this starter kit repository. You can use [this link](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/forks/new) to create a fork.
 3. **Clone** your forked repo and start developing your agent.
-4. **Develop** your agent(s) following the template in [how to write your own agent](#how-to-write-your-own-agent) section.
+4. **Develop** your agent(s) following the template in [how to write your own agent](#-how-to-write-your-own-agent) section.
 5. [**Submit**](#-how-to-make-a-submission) your trained models to [AIcrowd Gitlab](https://gitlab.aicrowd.com) for evaluation.
 
 # ✍️ How to write your own agent?
