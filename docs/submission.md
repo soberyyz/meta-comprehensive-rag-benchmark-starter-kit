@@ -8,7 +8,7 @@ Ready to showcase your **CRAG-MM** solution on the leaderboard? Follow the steps
 
 ### 1.1 Clone the Starter Kit 🏁
 
-1. **Fork** the official **[Meta CRAG-MM Starter Kit](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/tree/main)** repository from the challenge page.
+1. **Fork** the official **[Meta CRAG-MM Starter Kit](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2025/meta-comprehensive-rag-benchmark-starter-kit/-/tree/main)** repository from the challenge page.
 2. **Clone** your fork locally:
    ```bash
    git clone git@gitlab.aicrowd.com:<YOUR-AICROWD-USERNAME>/<YOUR-FORK>.git
