@@ -85,7 +85,7 @@ We adapt the method in [1], which is closest to the information-seeking flavor o
 # 🏁 Getting Started
 
 1. **Sign up** to join the competition [on the AIcrowd website](https://www.aicrowd.com/challenges/meta-crag-mm-challenge-2025).
-2. **Fork** this starter kit repository. You can use [this link](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/forks/new) to create a fork.
+2. **Fork** this starter kit repository. You can use [this link](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2025/meta-comprehensive-rag-benchmark-starter-kit/-/forks/new) to create a fork.
 3. **Clone** your forked repo and start developing your agent.
 4. **Develop** your agent(s) following the template in [how to write your own agent](#-how-to-write-your-own-agent) section.
 5. [**Submit**](#-how-to-make-a-submission) your trained models to [AIcrowd Gitlab](https://gitlab.aicrowd.com) for evaluation.
@@ -102,7 +102,7 @@ Please follow the instructions in [agents/README.md](agents/README.md) for instr
 
 You can add your SSH Keys to your GitLab account by going to your profile settings [here](https://gitlab.aicrowd.com/-/user_settings/ssh_keys). If you do not have SSH Keys, you will first need to [generate one](https://docs.gitlab.com/ee/user/ssh.html).
 
-2. **Fork the repository**. You can use [this link](https://gitlab.aicrowd.com/jyotish/meta-crag-submission/-/forks/new) to create a fork.
+2. **Fork the repository**. You can use [this link](https://gitlab.aicrowd.com/aicrowd/challenges/meta-comprehensive-rag-benchmark-kdd-cup-2025/meta-comprehensive-rag-benchmark-starter-kit/-/forks/new) to create a fork.
 
 3. **Clone the repository**
     ```bash
