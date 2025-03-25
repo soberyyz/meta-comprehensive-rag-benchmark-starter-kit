@@ -116,7 +116,7 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
     pip install -r requirements.txt
     ```
 
-5. Write your own agent as described in [How to write your own agent](#how-to-write-your-own-agent) section.
+5. Write your own agent as described in [agents/README.md](agents/README.md).
 
 6. Test your agent locally using `python local_evaluation.py`.
 
