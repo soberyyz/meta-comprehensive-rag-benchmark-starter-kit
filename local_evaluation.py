@@ -254,6 +254,127 @@ def evaluate_agent(
 
     return results
 
+def evaluate_agent_mt(
+    dataset: Dataset,
+    agent: BaseAgent,
+    openai_client: Optional = None,
+    eval_model_name: Optional[str] = None,
+    num_examples: Optional[int] = None,
+    show_progress: bool = True,
+    num_workers: int = DEFAULT_NUM_WORKERS,
+) -> Dict[str, Any]:
+    """
+    Evaluate an agent on a dataset and return performance metrics.
+
+    Args:
+        dataset: The dataset to evaluate on
+        agent: The agent to evaluate (must implement generate_response)
+        openai_client: OpenAI client for semantic evaluation (optional)
+        eval_model_name: OpenAI model name for semantic evaluation (optional)
+        num_examples: Maximum number of examples to evaluate (None for all)
+        show_progress: Whether to display a progress bar
+        num_workers: Number of parallel workers for evaluation
+
+    Returns:
+        Dictionary containing evaluation metrics and example results
+    """
+    # Log evaluation settings
+    console.print(f"[blue]Starting evaluation with {num_workers} workers[/blue]")
+    if eval_model_name:
+        console.print(
+            f"[blue]Using semantic evaluation with model: {eval_model_name}[/blue]"
+        )
+
+    total_examples = (
+        len(dataset) if num_examples is None else min(num_examples, len(dataset))
+    )
+
+    # Initialize results structure
+    results = {
+        "correct_exact": 0,
+        "correct": 0,
+        "miss": 0,
+        "total": 0,
+        "avg_convo_score": 0,
+        "examples": [],
+        "metadata": {
+            "eval_model": eval_model_name,
+            "agent_type": agent.__class__.__name__,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "num_examples": total_examples,
+            "num_turns": num_examples,
+        },
+    }
+
+    # Phase 1: Generate agent responses (keep sequential for API stability)
+    all_examples = []
+
+    # Use tqdm.rich if show_progress is True, otherwise use a regular range
+    eval_results = []
+    total_convo_score = 0
+    iterator = (
+        tqdm.rich.tqdm(range(total_examples), desc="Generating responses")
+        if show_progress
+        else range(total_examples)
+    )
+    for i in iterator:
+        n_failed_turns = 0
+        example = dataset[i]
+        examples_with_responses = generate_responses_for_example(example, i, agent)
+        all_examples.extend(examples_with_responses)
+
+        example_eval_result = []
+        for j, turn_data in enumerate(examples_with_responses):
+            if n_failed_turns == 2:
+                turn_eval_result = {
+                    **turn_data,
+                    "is_exact_match": False,
+                    "is_correct": False,
+                    "is_miss": True,
+                    "is_semantically_correct": False,
+                    "api_response": {
+                        "accuracy": False,
+                        "raw": '{\n  "accuracy": false\n}',
+                    },
+                }
+            else:
+                turn_eval_result = evaluate_response(turn_data, eval_model_name)
+                n_failed_turns += 1 if not turn_eval_result["is_correct"] else 0
+            example_eval_result.append(turn_eval_result)
+            eval_results.append(turn_eval_result)
+            print("Turn eval result:")
+            print(turn_eval_result)
+            print()
+        total_convo_score += calc_mt_metric(example_eval_result)
+        print(calc_mt_metric(example_eval_result))
+        print()
+
+    # Aggregate results and calculate metrics
+    aggregate_evaluation_results(results, eval_results)
+    results["avg_convo_score"] = total_convo_score / total_examples
+
+    return results
+
+def calc_mt_metric(eval_results: List[Dict[str, Any]]) -> float:
+    """Calculate the multi-turn metric for a conversation"""
+    # Initialize variables
+    total = 0
+    correct = 0
+    missing = 0
+    hallucination = 0
+
+    # Iterate over the evaluation results
+    for result in eval_results:
+        # Check if the result is correct
+        if result["is_correct"]:
+            correct += 1
+        if result["is_miss"]:
+            missing += 1
+        else:
+            hallucination += 1
+        total += 1
+
+    return (correct - hallucination) / total
 
 def aggregate_evaluation_results(
     results: Dict[str, Any], eval_results: List[Dict[str, Any]]
@@ -297,6 +418,8 @@ def generate_responses_for_example(
 
     # Determine if this is single or multi-turn
     is_multi_turn = len(example["turns"]) > 1
+    answer_history = []
+
 
     # Create a mapping from interaction_id to answer for easy lookup
     answer_lookup = {a["interaction_id"]: a["ans_full"] for a in example["answers"]}
@@ -314,7 +437,7 @@ def generate_responses_for_example(
         if turn_idx > 0:
             conversation_history = [
                 example["turns"][:turn_idx],
-                example["answers"][:turn_idx],
+                answer_history,
             ]
 
         # Generate agent response with history for multi-turn conversations
@@ -336,6 +459,9 @@ def generate_responses_for_example(
                 ),
             }
         )
+        answer_history.append(
+            {"interaction_id": interaction_id, "agent_response": agent_response}
+        )
 
     return examples_with_responses
 
@@ -348,7 +474,18 @@ def display_results(eval_results: Dict[str, Any], num_examples: int = 3) -> None
     table.add_column("Metric", style="dim")
     table.add_column("Value")
 
-    table.add_row("Total examples", str(eval_results["total"]))
+    # print("eval_results:")
+    # print(eval_results)
+    # print()
+
+    if eval_results["examples"][0]["is_multi_turn"]:
+        table.add_row(
+            "Total conversations", str(eval_results["metadata"]["num_examples"])
+        )
+        table.add_row("Total turns", str(eval_results["total"]))
+        table.add_row("Avg conversation score", "{:.2f}".format(eval_results["avg_convo_score"]))
+    else:
+        table.add_row("Total examples", str(eval_results["total"]))
     table.add_row("Exact matches", str(eval_results["correct_exact"]))
     table.add_row('"I don\'t know" responses', str(eval_results["miss"]))
     table.add_row(
@@ -407,7 +544,7 @@ def display_results(eval_results: Dict[str, Any], num_examples: int = 3) -> None
                 prev_turns, prev_answers = example["history"]
                 for t_idx, (turn, answer) in enumerate(zip(prev_turns, prev_answers)):
                     content.append(f"[cyan]User:[/cyan] {turn['query']}")
-                    content.append(f"[green]Agent:[/green] {answer['ans_full']}")
+                    content.append(f"[green]Agent:[/green] {answer['agent_response']}")
                     # Add a separator between history items
                     if t_idx < len(prev_turns) - 1:
                         content.append("")
@@ -595,14 +732,26 @@ if __name__ == "__main__":
 
     # Run evaluation
     console.print(f"[bold yellow]Running evaluation...[/bold yellow]")
-    eval_results = evaluate_agent(
-        dataset[split_to_use],
-        agent=UserAgent(),
-        openai_client=openai_client if not args.disable_llm_judge else None,
-        eval_model_name=args.eval_model if not args.disable_llm_judge else None,
-        num_examples=args.num_eval,
-        show_progress=not args.no_progress,
-    )
+    eval_results = {}
+    if args.dataset_type == "single-turn":
+        eval_results = evaluate_agent(
+            dataset[split_to_use],
+            agent=UserAgent(),
+            openai_client=openai_client if not args.disable_llm_judge else None,
+            eval_model_name=args.eval_model if not args.disable_llm_judge else None,
+            num_examples=args.num_eval,
+            show_progress=not args.no_progress,
+            num_workers=args.num_workers,
+        )
+    elif args.dataset_type == "multi-turn":
+        eval_results = evaluate_agent_mt(
+            dataset[split_to_use],
+            agent=UserAgent(),
+            openai_client=openai_client if not args.disable_llm_judge else None,
+            eval_model_name=args.eval_model if not args.disable_llm_judge else None,
+            num_examples=args.num_eval,
+            show_progress=not args.no_progress,
+        )
 
     # Display results
     display_results(eval_results, num_examples=args.show_examples)

@@ -95,7 +95,7 @@ class SimpleRAGAgent(BaseAgent):
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": [{"type": "text", "text": a["ans_full"]}],
+                        "content": [{"type": "text", "text": a["agent_response"]}],
                     }
                 )
         messages.append(

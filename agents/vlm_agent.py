@@ -58,18 +58,18 @@ class LlamaVisionModel(BaseAgent):
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": [{"type": "text", "text": a["ans_full"]}],
+                        "content": [{"type": "text", "text": a["agent_response"]}],
                     }
                 )
         messages.append(
             {"role": "user", "content": [{"type": "text", "text": prompt + query}]}
         )
-        print("QUERY", query)
+        # print("QUERY", query)
         input_text = self.processor.apply_chat_template(
             messages, add_generation_prompt=True
         )
-        print("input_text", input_text)
-        print("conversation_history", conversation_history)
+        # print("input_text", input_text)
+        # print("conversation_history", conversation_history)
         inputs = self.processor(
             image, input_text, add_special_tokens=False, return_tensors="pt"
         ).to(self.model.device)
