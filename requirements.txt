@@ -11,7 +11,7 @@ transformers
 tensorflow==2.18.0
 tensorflow-hub==0.16.1
 tensorflow-text==2.18.1
-cragmm-search-pipeline==0.2.7
+cragmm-search-pipeline==0.2.8
 rich
 tqdm
 p_tqdm
