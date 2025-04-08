@@ -19,6 +19,17 @@ from agents.prompts.summary import (
 from retrieval.retrieval_for_competition import CompetitionRetriever
 
 
+# 图像处理包初始化
+from modelscope import (
+    AutoModelForCausalLM, 
+    AutoTokenizer,
+    snapshot_download,
+    pipeline
+)
+from PIL import Image
+import torch
+
+
 
 class TeamAgent(BaseAgent):
     """This class demonstrates the sample use of RAG API for the challenge"""
@@ -49,6 +60,19 @@ class TeamAgent(BaseAgent):
             text_reranker_name="BAAI/bge-reranker-base",
             image_reranker_name="",
         )
+        
+        # 初始化Ovis2-1B多模态模型
+        self.ovis_model = AutoModelForCausalLM.from_pretrained(
+            '/root/Ovis2-1B',
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            trust_remote_code=True
+        )
+        self.ovis_tokenizer = AutoTokenizer.from_pretrained(
+            '/root/Ovis2-1B',
+            trust_remote_code=True
+        )
+
 
     def _get_llm_response(self, query, image=None) -> str:
         if image:
@@ -68,37 +92,36 @@ class TeamAgent(BaseAgent):
         )[-1].split("<|eot_id|>")[0]
         return model_answer
 
-    def _get_image_content(self, image):
-        summarize_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                ],
-            },
-            {"role": "user", "content": [{"type": "text", "text": SUMMARY_IMAGE_CONTENT}]},
-        ]
-        summarize_input_text = self.processor.apply_chat_template(
-            summarize_messages, add_generation_prompt=True
+    def _ovis_description(self, image, prompt):
+        """多模态描述生成模块"""
+        query = f"<image>\n{prompt}"
+        inputs = self.ovis_model.build_inputs(
+            query=query,
+            images=[image],
+            tokenizer=self.ovis_tokenizer
         )
-        summarize_answer = self._get_llm_response(summarize_input_text, image)
-        return summarize_answer
+        outputs = self.ovis_model.generate(
+            ​**​inputs,
+            max_new_tokens=1024
+        )
+        return self.ovis_tokenizer.decode(
+            outputs[0], 
+            skip_special_tokens=True
+        )
     
-    def _get_image_text(self, image):
-        summarize_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                ],
-            },
-            {"role": "user", "content": [{"type": "text", "text": SUMMARY_IMAGE_TEXT}]},
-        ]
-        summarize_input_text = self.processor.apply_chat_template(
-            summarize_messages, add_generation_prompt=True
+    def get_image_content(self, image):
+        """综合图像描述生成"""
+        return self._ovis_description(
+            image=image,
+            prompt="详细描述图像内容，包括场景、物体、人物特征及相互关系"
         )
-        summarize_answer = self._get_llm_response(summarize_input_text, image)
-        return summarize_answer
+    
+    def get_image_text(self, image):
+        """结构化文本提取"""
+        return self._ovis_description(
+                image=image,
+                prompt="提取出图片中的文本信息"
+            )
 
     def _get_web_search_text(self, web_pages):
         web_search_text = ""
