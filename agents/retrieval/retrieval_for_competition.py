@@ -11,14 +11,17 @@ from .cross_modal_retrieval import CrossModalRetriever
 class CompetitionRetriever:
     def __init__(self, 
                  text_model_name: str = 'BAAI/bge-base-en-v1.5',
-                 image_model_name: str = 'clip-ViT-B-32',
+                 image_model_name: str = '',
                  text_reranker_name: str = 'BAAI/bge-reranker-base',
-                 image_reranker_name: str = 'clip-ViT-B-32'):
+                 image_reranker_name: str = ''):
         
         self.text_retriever = TextRetriever(text_model_name)
-        self.image_retriever = ImageRetriever(image_model_name)
         self.text_reranker = TextReranker(text_reranker_name)
-        self.image_reranker = ImageReranker(image_reranker_name)
+        self.image_retriever = None
+        self.image_reranker = None
+        if image_model_name != '':
+            self.image_retriever = ImageRetriever(image_model_name)
+            self.image_reranker = ImageReranker(image_reranker_name)
         self.cross_modal_retriever = CrossModalRetriever()
     
     def merge_recall_results(self, results: List[List[Union[str, object]]]) -> List[Union[str, object]]:
