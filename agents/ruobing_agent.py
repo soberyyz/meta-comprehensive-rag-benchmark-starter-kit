@@ -16,6 +16,9 @@ from agents.prompts.summary import (
     SUMMARY_IMAGE_TEXT,
     SUMMARY_IMAGE_CONTENT
 )
+from agents.prompts.rewrite import (
+    RERWRITE_QUERY_BY_IMAGE
+)
 from retrieval.retrieval_for_competition import CompetitionRetriever
 
 
@@ -100,10 +103,28 @@ class TeamAgent(BaseAgent):
         summarize_answer = self._get_llm_response(summarize_input_text, image)
         return summarize_answer
 
-    def _get_web_search_text(self, web_pages):
+    def _get_web_search_text(self, web_pages): # TODO: 完善一下web处理逻辑@xiaoli
         web_search_text = ""
         web_search_text += web_pages["page_snippet"] + "\n\n"
         return web_search_text
+
+    def _query_rewrite(self, query, image):
+        if image is None:
+            return query
+        summarize_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image"},
+                ],
+            },
+            {"role": "user", "content": [{"type": "text", "text": RERWRITE_QUERY_BY_IMAGE.format(query=query)}]},
+        ]
+        summarize_input_text = self.processor.apply_chat_template(
+            summarize_messages, add_generation_prompt=True
+        )
+        rewrite_query = self._get_llm_response(summarize_input_text, image)
+        return rewrite_query
 
     def generate_response(
         self,
@@ -153,10 +174,18 @@ class TeamAgent(BaseAgent):
         web_search_results = []
         for result in search_results_from_image_info + search_results_from_user_query:
             web_search_results.append(self._get_web_search_text(result)) # TODO: 完善一下web处理逻辑@xiaoli
-
         # call the image search mock API
         search_results_from_image = self.search_pipeline(image, k=3) # TODO: 完善一下image search逻辑@xiaoli
-        context_str = "" # TODO: 将所有来源进行集合@keke
+        image_recall_results = [text for text in search_results_from_image] # TODO: 完善一下image search逻辑@xiaoli
+        # 重写query
+        rewrite_query = self._query_rewrite(query, image)
+        queies = [query, rewrite_query] if rewrite_query != query else [query]
+        # 进行重召回和重排序
+        full_context = web_search_results + image_recall_results
+        # 重召回and排序
+        rerank_results = self.competition_retriever.multi_modal_search(queies, full_context, top_k_recall=50, top_k_rerank=10)
+        context_str = [f"Reference content {i}: {rerank_results[i]}" for i in range(len(rerank_results))] # TODO: 将所有来源进行集合@keke
+        context_str = "\n".join(context_str)
         # put them in llm prompt.
         llm_prompt = RAG_BASELINE_PROMPT.format(
             token_limit=self.max_output_words_len, 
