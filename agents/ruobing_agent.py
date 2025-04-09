@@ -16,11 +16,22 @@ from agents.prompts.summary import (
     SUMMARY_IMAGE_TEXT,
     SUMMARY_IMAGE_CONTENT
 )
-from agents.prompts.rewrite import (
-    RERWRITE_QUERY_BY_IMAGE
-)
 from retrieval.retrieval_for_competition import CompetitionRetriever
 
+
+# 图像处理包初始化
+from modelscope import (
+    AutoModelForCausalLM, 
+    AutoTokenizer,
+    snapshot_download,
+    pipeline
+)
+from PIL import Image
+import torch
+
+
+# 分割
+from agents.segment_images import SamEncoder, SamDecoder, segment_image_per_point
 
 
 class TeamAgent(BaseAgent):
@@ -52,6 +63,26 @@ class TeamAgent(BaseAgent):
             text_reranker_name="BAAI/bge-reranker-base",
             image_reranker_name="",
         )
+        
+        # 初始化Ovis2-1B多模态模型
+        self.ovis_model = AutoModelForCausalLM.from_pretrained(
+            'model_weight/Ovis2-1B',
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            trust_remote_code=True
+        )
+        self.ovis_tokenizer = AutoTokenizer.from_pretrained(
+            'model_weight/Ovis2-1B',
+            trust_remote_code=True
+        )
+
+        # 初始化分割模型
+        # TODO 修改segment_image_per_point
+        encoder_model = "onnx/efficientvit_sam_xl1_encoder.onnx"
+        decoder_model = "onnx/efficientvit_sam_xl1_decoder.onnx"
+        self.encoder = SamEncoder(model_path=encoder_model)
+        self.decoder = SamDecoder(model_path=decoder_model)
+
 
     def _get_llm_response(self, query, image=None) -> str:
         if image:
@@ -71,60 +102,41 @@ class TeamAgent(BaseAgent):
         )[-1].split("<|eot_id|>")[0]
         return model_answer
 
-    def _get_image_content(self, image):
-        summarize_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                ],
-            },
-            {"role": "user", "content": [{"type": "text", "text": SUMMARY_IMAGE_CONTENT}]},
-        ]
-        summarize_input_text = self.processor.apply_chat_template(
-            summarize_messages, add_generation_prompt=True
+    def _ovis_description(self, image, prompt):
+        """多模态描述生成模块"""
+        query = f"<image>\n{prompt}"
+        inputs = self.ovis_model.build_inputs(
+            query=query,
+            images=[image],
+            tokenizer=self.ovis_tokenizer
         )
-        summarize_answer = self._get_llm_response(summarize_input_text, image)
-        return summarize_answer
+        outputs = self.ovis_model.generate(
+            ​**​inputs,
+            max_new_tokens=1024
+        )
+        return self.ovis_tokenizer.decode(
+            outputs[0], 
+            skip_special_tokens=True
+        )
     
-    def _get_image_text(self, image):
-        summarize_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                ],
-            },
-            {"role": "user", "content": [{"type": "text", "text": SUMMARY_IMAGE_TEXT}]},
-        ]
-        summarize_input_text = self.processor.apply_chat_template(
-            summarize_messages, add_generation_prompt=True
+    def get_image_content(self, image):
+        """综合图像描述生成"""
+        return self._ovis_description(
+            image=image,
+            prompt="Describe in detail the scene, objects, characteristics of people and their relationships in the image."
         )
-        summarize_answer = self._get_llm_response(summarize_input_text, image)
-        return summarize_answer
+    
+    def get_image_text(self, image):
+        """结构化文本提取"""
+        return self._ovis_description(
+                image=image,
+                prompt="Accurately extract all text from the given image, no details missed."
+            )
 
-    def _get_web_search_text(self, web_pages): # TODO: 完善一下web处理逻辑@xiaoli
+    def _get_web_search_text(self, web_pages):
         web_search_text = ""
         web_search_text += web_pages["page_snippet"] + "\n\n"
         return web_search_text
-
-    def _query_rewrite(self, query, image):
-        if image is None:
-            return query
-        summarize_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                ],
-            },
-            {"role": "user", "content": [{"type": "text", "text": RERWRITE_QUERY_BY_IMAGE.format(query=query)}]},
-        ]
-        summarize_input_text = self.processor.apply_chat_template(
-            summarize_messages, add_generation_prompt=True
-        )
-        rewrite_query = self._get_llm_response(summarize_input_text, image)
-        return rewrite_query
 
     def generate_response(
         self,
@@ -174,18 +186,10 @@ class TeamAgent(BaseAgent):
         web_search_results = []
         for result in search_results_from_image_info + search_results_from_user_query:
             web_search_results.append(self._get_web_search_text(result)) # TODO: 完善一下web处理逻辑@xiaoli
+
         # call the image search mock API
         search_results_from_image = self.search_pipeline(image, k=3) # TODO: 完善一下image search逻辑@xiaoli
-        image_recall_results = [text for text in search_results_from_image] # TODO: 完善一下image search逻辑@xiaoli
-        # 重写query
-        rewrite_query = self._query_rewrite(query, image)
-        queies = [query, rewrite_query] if rewrite_query != query else [query]
-        # 进行重召回和重排序
-        full_context = web_search_results + image_recall_results
-        # 重召回and排序
-        rerank_results = self.competition_retriever.multi_modal_search(queies, full_context, top_k_recall=50, top_k_rerank=10)
-        context_str = [f"Reference content {i}: {rerank_results[i]}" for i in range(len(rerank_results))] # TODO: 将所有来源进行集合@keke
-        context_str = "\n".join(context_str)
+        context_str = "" # TODO: 将所有来源进行集合@keke
         # put them in llm prompt.
         llm_prompt = RAG_BASELINE_PROMPT.format(
             token_limit=self.max_output_words_len, 
