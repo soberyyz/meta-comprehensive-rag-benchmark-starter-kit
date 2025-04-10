@@ -30,12 +30,9 @@ from PIL import Image
 import torch
 
 
-<<<<<<< HEAD
 # 分割
 from agents.segment_images import SamEncoder, SamDecoder, segment_image_per_point
 
-=======
->>>>>>> 6048ceb1426eea6c52d9c0280266824f6b75cdee
 
 class TeamAgent(BaseAgent):
     """This class demonstrates the sample use of RAG API for the challenge"""
@@ -69,18 +66,13 @@ class TeamAgent(BaseAgent):
         
         # 初始化Ovis2-1B多模态模型
         self.ovis_model = AutoModelForCausalLM.from_pretrained(
-<<<<<<< HEAD
-            'model_weight/Ovis2-1B',
-=======
-            '/root/Ovis2-1B',
->>>>>>> 6048ceb1426eea6c52d9c0280266824f6b75cdee
+            '/root/model_weight/Ovis2-1B',
             torch_dtype=torch.bfloat16,
             device_map="auto",
             trust_remote_code=True
         )
         self.ovis_tokenizer = AutoTokenizer.from_pretrained(
-<<<<<<< HEAD
-            'model_weight/Ovis2-1B',
+            '/root/model_weight/Ovis2-1B',
             trust_remote_code=True
         )
 
@@ -91,12 +83,6 @@ class TeamAgent(BaseAgent):
         self.encoder = SamEncoder(model_path=encoder_model)
         self.decoder = SamDecoder(model_path=decoder_model)
 
-=======
-            '/root/Ovis2-1B',
-            trust_remote_code=True
-        )
-
->>>>>>> 6048ceb1426eea6c52d9c0280266824f6b75cdee
 
     def _get_llm_response(self, query, image=None) -> str:
         if image:
@@ -137,22 +123,14 @@ class TeamAgent(BaseAgent):
         """综合图像描述生成"""
         return self._ovis_description(
             image=image,
-<<<<<<< HEAD
             prompt="Describe in detail the scene, objects, characteristics of people and their relationships in the image."
-=======
-            prompt="详细描述图像内容，包括场景、物体、人物特征及相互关系"
->>>>>>> 6048ceb1426eea6c52d9c0280266824f6b75cdee
         )
     
     def get_image_text(self, image):
         """结构化文本提取"""
         return self._ovis_description(
                 image=image,
-<<<<<<< HEAD
                 prompt="Accurately extract all text from the given image, no details missed."
-=======
-                prompt="提取出图片中的文本信息"
->>>>>>> 6048ceb1426eea6c52d9c0280266824f6b75cdee
             )
 
     def _get_web_search_text(self, web_pages):
