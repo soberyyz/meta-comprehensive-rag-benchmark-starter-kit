@@ -32,6 +32,7 @@ class SimpleRAGAgent(BaseAgent):
             web_hf_dataset_id="crag-mm-2025/web-search-index-public",
             image_hf_dataset_id="crag-mm-2025/image-search-index-public",
         )
+        # Please don't change the image_model_name and text_model_name, as the indices are constructed with exactly these models. 
 
     def generate_response(
         self,
