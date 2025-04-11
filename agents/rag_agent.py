@@ -39,14 +39,13 @@ class SimpleRAGAgent(BaseAgent):
         image: Optional[str] = None,
         conversation_history: Optional[List[Dict[str, str]]] = None,
     ) -> str:
-        """Generate a response using the model given the query and image. We currently don't consider multi_turn
+        """Generate a response using the model given the query and image. 
         Args:
             Query: The question of the current turn.
             Image: The image of the conversation session. There is only one image per conversation.
             Conversation_history: For multi-turn conversation only. Questions and answers of previous turns.
                 For single-turn, this is [].
                 For multi-turn, this is a list of two lists. The first contains questions, and the second contains answers.
-        Currently, it works for single-turn primarily because multi-turn data loading has to be changed.
         """
 
         # First call the LLM to generate some keywords for the image (for future RAG).
