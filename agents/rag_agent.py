@@ -33,6 +33,7 @@ class SimpleRAGAgent(BaseAgent):
             image_hf_dataset_id="crag-mm-2025/image-search-index-validation",
         )
         # Please don't change the image_model_name and text_model_name, as the indices are constructed with exactly these models. 
+        # For Phase 1, participants can use '*-validation' indices. We may release other indices for future phases.  
 
     def generate_response(
         self,
