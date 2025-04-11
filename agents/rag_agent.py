@@ -28,9 +28,9 @@ class SimpleRAGAgent(BaseAgent):
         self.max_gen_len = max_gen_len
         self.search_pipeline = UnifiedSearchPipeline(
             text_model_name="sentence-transformers/all-MiniLM-L6-v2",
-            image_model_name="openai/clip-vit-base-patch16",
-            web_hf_dataset_id="crag-mm-2025/web-search-index-public",
-            image_hf_dataset_id="crag-mm-2025/image-search-index-public",
+            image_model_name="openai/clip-vit-large-patch14-336",
+            web_hf_dataset_id="crag-mm-2025/web-search-index-validation",
+            image_hf_dataset_id="crag-mm-2025/image-search-index-validation",
         )
         # Please don't change the image_model_name and text_model_name, as the indices are constructed with exactly these models. 
 
