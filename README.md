@@ -49,7 +49,7 @@ The dataset includes a mock image search API and a mock web search API to simula
 
 You can download the mock APIs with 
 ```
-pip install cragmm-search-pipeline==0.2.8
+pip install cragmm-search-pipeline==0.2.10
 ```
 
 `agents/rag_agent.py` shows a sample usage of the APIs. 
