@@ -723,7 +723,13 @@ if __name__ == "__main__":
             )
         )
     # Initialize OpenAI client if needed
-    openai_client = None
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        console.print(
+            "[red]Error: OPENAI_API_KEY 環境変数エラー.[/red]"
+        )
+        exit(1)
+    openai_client = OpenAI(api_key=api_key)
     if not args.disable_llm_judge:
         console.print(
             f"[bold magenta]Using semantic evaluation with model: {args.eval_model}[/bold magenta]"
