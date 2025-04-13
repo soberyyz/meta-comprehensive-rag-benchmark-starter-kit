@@ -1,6 +1,7 @@
 { 
     "challenge_id": "single-source-augmentation",
     "gpu": true,
+    "authors": ["Rarage"],
     "hf_models": [
         "meta-llama/Llama-3.2-11B-Vision-Instruct",
         "sentence-transformers/all-MiniLM-L6-v2",
