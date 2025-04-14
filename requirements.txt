@@ -25,4 +25,3 @@ loguru
 rich
 tqdm
 p_tqdm
-ps_util
