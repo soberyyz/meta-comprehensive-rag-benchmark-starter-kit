@@ -15,24 +15,65 @@ from typing import Dict, Any
 
 def ensure_crag_cache_dir_is_configured():
     """
-    Ensure the CRAG_CACHE_DIR environment variable is set.
-    """
-    cache_dir = os.environ.get("CRAG_CACHE_DIR", False)
+    Ensure the cache directory for CRAG images exists and is properly configured.
+    
+    This function:
+    1. Checks if CRAG_CACHE_DIR environment variable is set
+    2. If not set, uses platform-appropriate default cache location
+    3. Creates the directory if it doesn't exist
+    4. Returns the path to the cache directory
+    
+    Returns:
+        str: Path to the cache directory
+    """    
+    # First check if user has explicitly set a cache directory
+    cache_dir = os.environ.get("CRAG_CACHE_DIR")
+    
     if not cache_dir:
-        raise Exception("CRAG_CACHE_DIR environment variable not set. This directory is used to store downloaded images for efficient caching and retrieval. Please set it with: 'export CRAG_CACHE_DIR=/path/to/cache' (example: 'export CRAG_CACHE_DIR=/tmp/crag_cache')")
+        # Use platform-specific default locations if not explicitly set
+        if os.name == 'nt':  # Windows
+            cache_home = os.environ.get("LOCALAPPDATA", os.path.expanduser("~/AppData/Local"))
+        else:  # Unix/Linux/Mac
+            cache_home = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
+        
+        cache_dir = os.path.join(cache_home, "cragmm_images_cache")
+        
+        # Print info message only the first time
+        if not hasattr(ensure_crag_cache_dir_is_configured, "_cache_location_shown"):
+            print(f"Caching downloaded images in {cache_dir}")
+            print("You can override this by setting the CRAG_CACHE_DIR environment variable.")
+            ensure_crag_cache_dir_is_configured._cache_location_shown = True
+    
+    # Create the directory if it doesn't exist
+    if not os.path.exists(cache_dir):
+        try:
+            os.makedirs(cache_dir, exist_ok=True)
+        except Exception as e:
+            print(f"Warning: Failed to create cache directory {cache_dir}: {e}")
+            # Fall back to a temporary directory if we can't create the default
+            import tempfile
+            cache_dir = os.path.join(tempfile.gettempdir(), "cragmm_images_cache")
+            os.makedirs(cache_dir, exist_ok=True)
+            print(f"Using fallback cache directory: {cache_dir}")
+    
+    return cache_dir    
 
-def download_image_url(image_url, cache_dir='/tmp/crag_cache'):
+def download_image_url(image_url):
     """Downloads image from URL and saves it to the cache directory with a deterministic name.
-    Returns local path if successful, None otherwise.
+    Returns local path if successful, raises Exception otherwise.
     
     Args:
         image_url: URL of the image to download
-        cache_dir: Directory to store cached images
+        
+    Returns:
+        str: Local path to the downloaded or cached image
+        
+    Raises:
+        Exception: If the image couldn't be downloaded or is invalid
     """
-    ensure_crag_cache_dir_is_configured()
+    cache_dir = ensure_crag_cache_dir_is_configured()
     
-    
-    # Create cache directory if it doesn't exist
+    # Create cache directory if it doesn't exist (redundant but keeps backward compatibility)
     os.makedirs(cache_dir, exist_ok=True)
     
     try:
