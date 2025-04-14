@@ -1,131 +1,326 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Any
+import os
 
-import requests
 import torch
 from PIL import Image
-from transformers import MllamaForConditionalGeneration, AutoProcessor
-from typing import Optional, Dict, List, Any, Callable
+from agents.base_agent import BaseAgent
 from cragmm_search.search import UnifiedSearchPipeline
 
-from agents.base_agent import BaseAgent
+import vllm
 
+# Configuration constants
+AICROWD_SUBMISSION_BATCH_SIZE = 8
+
+# GPU utilization settings 
+# Change VLLM_TENSOR_PARALLEL_SIZE during local runs based on your available GPUs
+# The evaluation servers should have this set to 1
+VLLM_TENSOR_PARALLEL_SIZE = 1 
+VLLM_GPU_MEMORY_UTILIZATION = 0.85 
+
+# These are model specific parameters to get the model to run on a single NVIDIA L40s GPU
+MAX_MODEL_LEN = 8192
+MAX_NUM_SEQS = 2
+MAX_GENERATION_TOKENS = 75
+
+# Number of search results to retrieve
+NUM_SEARCH_RESULTS = 3
 
 class SimpleRAGAgent(BaseAgent):
-    """This class demonstrates the sample use of RAG API for the challenge"""
-
-    """It simply searches the image and the query, and append the retrieved text & image to the query"""
+    """
+    SimpleRAGAgent demonstrates Retrieval-Augmented Generation (RAG) for the CRAG-MM benchmark.
+    
+    This agent enhances responses by retrieving relevant information through a search pipeline
+    and incorporating that context when generating answers. It follows a two-step approach:
+    1. First, batch-summarize all images to generate effective search terms
+    2. Then, retrieve relevant information and incorporate it into the final prompts
+    
+    The agent leverages batched processing at every stage to maximize efficiency.
+    
+    Note:
+        This agent requires a search_pipeline for RAG functionality. Without it,
+        the agent will raise a ValueError during initialization.
+    
+    Attributes:
+        search_pipeline (UnifiedSearchPipeline): Pipeline for searching relevant information.
+        model_name (str): Name of the Hugging Face model to use.
+        max_gen_len (int): Maximum generation length for responses.
+        llm (vllm.LLM): The vLLM model instance for inference.
+        tokenizer: The tokenizer associated with the model.
+    """
 
     def __init__(
-        self, model_id="meta-llama/Llama-3.2-11B-Vision-Instruct", max_gen_len=64
+        self, 
+        search_pipeline: UnifiedSearchPipeline, 
+        model_name: str = "meta-llama/Llama-3.2-11B-Vision-Instruct", 
+        max_gen_len: int = 64
     ):
-        """Initialize the agent with a model ID from HF. As per the challenge requirement, we only use LLaMA model"""
-        self.model_id = model_id
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = MllamaForConditionalGeneration.from_pretrained(
-            self.model_id, torch_dtype=torch.bfloat16, device_map="auto"
-        )
-        self.processor = AutoProcessor.from_pretrained(self.model_id)
-        self.max_gen_len = max_gen_len
-        self.search_pipeline = UnifiedSearchPipeline(
-            text_model_name="sentence-transformers/all-MiniLM-L6-v2",
-            image_model_name="openai/clip-vit-large-patch14-336",
-            web_hf_dataset_id="crag-mm-2025/web-search-index-validation",
-            image_hf_dataset_id="crag-mm-2025/image-search-index-validation",
-        )
-        # Please don't change the image_model_name and text_model_name, as the indices are constructed with exactly these models. 
-        # For Phase 1, participants can use '*-validation' indices. We may release other indices for future phases.  
-
-    def generate_response(
-        self,
-        query: str,
-        image: Optional[str] = None,
-        conversation_history: Optional[List[Dict[str, str]]] = None,
-    ) -> str:
-        """Generate a response using the model given the query and image. 
+        """
+        Initialize the RAG agent with the necessary components.
+        
         Args:
-            Query: The question of the current turn.
-            Image: The image of the conversation session. There is only one image per conversation.
-            Conversation_history: For multi-turn conversation only. Questions and answers of previous turns.
-                For single-turn, this is [].
-                For multi-turn, this is a list of two lists. The first contains questions, and the second contains answers.
+            search_pipeline (UnifiedSearchPipeline): A pipeline for searching web and image content.
+                This must not be None for the RAG agent to function properly.
+            model_name (str): Hugging Face model name to use for vision-language processing.
+            max_gen_len (int): Maximum generation length for model outputs.
+            
+        Raises:
+            ValueError: If search_pipeline is None, as it's required for RAG functionality.
         """
-
-        # First call the LLM to generate some keywords for the image (for future RAG).
-        summarize_prompt = "Please summarize the image with one sentence. Please output the summary only. "
-        summarize_messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                ],
-            },
-            {"role": "user", "content": [{"type": "text", "text": summarize_prompt}]},
-        ]
-        summarize_input_text = self.processor.apply_chat_template(
-            summarize_messages, add_generation_prompt=True
-        )
-        summarize_inputs = self.processor(
-            image, summarize_input_text, add_special_tokens=False, return_tensors="pt"
-        ).to(self.model.device)
-        summarize_output = self.model.generate(
-            **summarize_inputs, max_new_tokens=self.max_gen_len
-        )
-        summarize_answer = self.processor.decode(summarize_output[0])
-        summarize_answer = summarize_answer.split(
-            "<|start_header_id|>assistant<|end_header_id|>"
-        )[-1].split("<|eot_id|>")[0]
-
-        prompt = """You are a helpful assistant that answers user questions. 
-        Please answer the following question given the image. 
+        super().__init__(search_pipeline)
+        
+        if search_pipeline is None:
+            raise ValueError("Search pipeline is required for RAG agent")
+            
+        self.model_name = model_name
+        self.max_gen_len = max_gen_len
+        
+        self.initialize_models()
+        
+    def initialize_models(self):
         """
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image"},
-                ],
-            }
-        ]
-        if conversation_history != []:
-            # add conversation history to the 'messages'
-            turn_questions, turn_answers = conversation_history
-            for q, a in zip(turn_questions, turn_answers):
-                messages.append(
-                    {"role": "user", "content": [{"type": "text", "text": q["query"]}]}
-                )
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": [{"type": "text", "text": a["agent_response"]}],
-                    }
-                )
-        messages.append(
-            {"role": "user", "content": [{"type": "text", "text": prompt + query}]}
+        Initialize the vLLM model and tokenizer with appropriate settings.
+        
+        This configures the model for vision-language tasks with optimized
+        GPU memory usage and restricts to one image per prompt, as 
+        Llama-3.2-Vision models do not handle multiple images well in a single prompt.
+        
+        Note:
+            The limit_mm_per_prompt setting is critical as the current Llama vision models
+            struggle with multiple images in a single conversation.
+            Ref: https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/discussions/43#66f98f742094ed9e5f5107d4
+        """
+        print(f"Initializing {self.model_name} with vLLM...")
+        
+        # Initialize the model with vLLM
+        self.llm = vllm.LLM(
+            self.model_name,
+            tensor_parallel_size=VLLM_TENSOR_PARALLEL_SIZE, 
+            gpu_memory_utilization=VLLM_GPU_MEMORY_UTILIZATION, 
+            max_model_len=MAX_MODEL_LEN,
+            max_num_seqs=MAX_NUM_SEQS,
+            trust_remote_code=True,
+            dtype="bfloat16",
+            enforce_eager=True,
+            limit_mm_per_prompt={
+                "image": 1 
+            } # In the CRAG-MM dataset, every conversation has at most 1 image
         )
-        rag_prompt = (
-            "Here are some other relevant images and information that may help you.\n\n"
-        )
+        self.tokenizer = self.llm.get_tokenizer()
+        
+        print("Models loaded successfully")
 
-        # According to official community answer, LLaMA-VL does not work well with multiple images in the same conversation,
-        # Ref: https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/discussions/43#66f98f742094ed9e5f5107d4
-        # so we won't put multiple images in the same conversation.
-
-        # call the web search api for relevant texts.
-        search_results = self.search_pipeline(summarize_answer, k=3)
-
-        for result in search_results:
-            rag_prompt += result["page_snippet"] + "\n\n"
-        messages.append(
-            {"role": "user", "content": [{"type": "text", "text": rag_prompt}]}
+    def get_batch_size(self) -> int:
+        """
+        Determines the batch size used by the evaluator when calling batch_generate_response.
+        
+        The evaluator uses this value to determine how many queries to send in each batch.
+        Valid values are integers between 1 and 16.
+        
+        Returns:
+            int: The batch size, indicating how many queries should be processed together 
+                 in a single batch.
+        """
+        return AICROWD_SUBMISSION_BATCH_SIZE
+    
+    def batch_summarize_images(self, images: List[Image.Image]) -> List[str]:
+        """
+        Generate brief summaries for a batch of images to use as search keywords.
+        
+        This method efficiently processes all images in a single batch call to the model,
+        resulting in better performance compared to sequential processing.
+        
+        Args:
+            images (List[Image.Image]): List of images to summarize.
+            
+        Returns:
+            List[str]: List of brief text summaries, one per image.
+        """
+        # Prepare image summarization prompts in batch
+        summarize_prompt = "Please summarize the image with one sentence that describes its key elements."
+        
+        inputs = []
+        for image in images:
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant that accurately describes images. Your responses are subsequently used to perform a web search to retrieve the relevant information about the image."},
+                {"role": "user", "content": [{"type": "image"}, {"type": "text", "text": summarize_prompt}]},
+            ]
+            
+            # Format prompt using the tokenizer
+            formatted_prompt = self.tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                tokenize=False
+            )
+            
+            inputs.append({
+                "prompt": formatted_prompt,
+                "multi_modal_data": {
+                    "image": image
+                }
+            })
+        
+        # Generate summaries in a single batch call
+        outputs = self.llm.generate(
+            inputs,
+            sampling_params=vllm.SamplingParams(
+                temperature=0.1,
+                top_p=0.9,
+                max_tokens=30,  # Short summary only
+                skip_special_tokens=True
+            )
         )
-        input_text = self.processor.apply_chat_template(
-            messages, add_generation_prompt=True
+        
+        # Extract and clean summaries
+        summaries = [output.outputs[0].text.strip() for output in outputs]
+        print(f"Generated {len(summaries)} image summaries")
+        return summaries
+    
+    def prepare_rag_enhanced_inputs(
+        self, 
+        queries: List[str], 
+        images: List[Image.Image], 
+        image_summaries: List[str],
+        message_histories: List[List[Dict[str, Any]]]
+    ) -> List[dict]:
+        """
+        Prepare RAG-enhanced inputs for the model by retrieving relevant information in batch.
+        
+        This method:
+        1. Uses image summaries combined with queries to perform effective searches
+        2. Retrieves contextual information from the search_pipeline
+        3. Formats prompts incorporating this retrieved information
+        
+        Args:
+            queries (List[str]): List of user questions.
+            images (List[Image.Image]): List of images to analyze.
+            image_summaries (List[str]): List of image summaries for search.
+            message_histories (List[List[Dict[str, Any]]]): List of conversation histories.
+            
+        Returns:
+            List[dict]: List of input dictionaries ready for the model.
+        """
+        # Batch process search queries
+        search_results_batch = []
+        
+        # Create combined search queries for each image+query pair
+        search_queries = [f"{query} {summary}" for query, summary in zip(queries, image_summaries)]
+        
+        # Retrieve relevant information for each query
+        for i, search_query in enumerate(search_queries):
+            print(f"Searching for query {i+1}/{len(search_queries)}: {search_query[:50]}{'...' if len(search_query) > 50 else ''}")
+            results = self.search_pipeline(search_query, k=NUM_SEARCH_RESULTS)
+            search_results_batch.append(results)
+        
+        # Prepare formatted inputs with RAG context for each query
+        inputs = []
+        for idx, (query, image, message_history, search_results) in enumerate(
+            zip(queries, images, message_histories, search_results_batch)
+        ):
+            # Create system prompt with RAG guidelines
+            SYSTEM_PROMPT = ("You are a helpful assistant that truthfully answers user questions about the provided image."
+                           "Keep your response concise and to the point. If you don't know the answer, respond with 'I don't know'.")
+            
+            # Add retrieved context if available
+            rag_context = ""
+            if search_results:
+                rag_context = "Here is some additional information that may help you answer:\n\n"
+                for i, result in enumerate(search_results):
+                    snippet = result.get('page_snippet', '')
+                    if snippet:
+                        rag_context += f"[Info {i+1}] {snippet}\n\n"
+                
+            # Structure messages with image and RAG context
+            messages = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": [{"type": "image"}]}
+            ]
+            
+            # Add conversation history for multi-turn conversations
+            if message_history:
+                messages = messages + message_history
+                
+            # Add RAG context as a separate user message if available
+            if rag_context:
+                messages.append({"role": "user", "content": rag_context})
+                
+            # Add the current query
+            messages.append({"role": "user", "content": query})
+            
+            # Apply chat template
+            formatted_prompt = self.tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                tokenize=False
+            )
+            
+            inputs.append({
+                "prompt": formatted_prompt,
+                "multi_modal_data": {
+                    "image": image
+                }
+            })
+        
+        return inputs
+
+    def batch_generate_response(
+        self,
+        queries: List[str],
+        images: List[Image.Image],
+        message_histories: List[List[Dict[str, Any]]],
+    ) -> List[str]:
+        """
+        Generate RAG-enhanced responses for a batch of queries with associated images.
+        
+        This method implements a complete RAG pipeline with efficient batch processing:
+        1. First batch-summarize all images to generate search terms
+        2. Then retrieve relevant information using these terms
+        3. Finally, generate responses incorporating the retrieved context
+        
+        Args:
+            queries (List[str]): List of user questions or prompts.
+            images (List[Image.Image]): List of PIL Image objects, one per query.
+                The evaluator will ensure that the dataset rows which have just
+                image_url are populated with the associated image.
+            message_histories (List[List[Dict[str, Any]]]): List of conversation histories,
+                one per query. Each history is a list of message dictionaries with
+                'role' and 'content' keys in the following format:
+                
+                - For single-turn conversations: Empty list []
+                - For multi-turn conversations: List of previous message turns in the format:
+                  [
+                    {"role": "user", "content": "first user message"},
+                    {"role": "assistant", "content": "first assistant response"},
+                    {"role": "user", "content": "follow-up question"},
+                    {"role": "assistant", "content": "follow-up response"},
+                    ...
+                  ]
+                
+        Returns:
+            List[str]: List of generated responses, one per input query.
+        """
+        print(f"Processing batch of {len(queries)} queries with RAG")
+        
+        # Step 1: Batch summarize all images for search terms
+        image_summaries = self.batch_summarize_images(images)
+        
+        # Step 2: Prepare RAG-enhanced inputs in batch
+        rag_inputs = self.prepare_rag_enhanced_inputs(
+            queries, images, image_summaries, message_histories
         )
-        inputs = self.processor(
-            image, input_text, add_special_tokens=False, return_tensors="pt"
-        ).to(self.model.device)
-        output = self.model.generate(**inputs, max_new_tokens=self.max_gen_len)
-        answer = self.processor.decode(output[0])
-        return answer.split("<|start_header_id|>assistant<|end_header_id|>")[-1].split(
-            "<|eot_id|>"
-        )[0]
+        
+        # Step 3: Generate responses using the batch of RAG-enhanced prompts
+        print(f"Generating responses for {len(rag_inputs)} queries")
+        outputs = self.llm.generate(
+            rag_inputs,
+            sampling_params=vllm.SamplingParams(
+                temperature=0.1,
+                top_p=0.9,
+                max_tokens=MAX_GENERATION_TOKENS,
+                skip_special_tokens=True
+            )
+        )
+        
+        # Extract and return the generated responses
+        responses = [output.outputs[0].text for output in outputs]
+        print(f"Successfully generated {len(responses)} responses")
+        return responses

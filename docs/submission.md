@@ -36,7 +36,16 @@ In your repository’s root directory, you will find or create an `aicrowd.json`
     "challenge_id": "single-source-augmentation",
     "gpu": true,
     "hf_models": [
-        "your-org/your-model"
+        {
+            "repo_id": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+            "revision": "main"
+        },
+        {
+            "repo_id": "your-org/your-model",
+            "revision": "your-custom-revision",
+            "ignore_patterns": "*.md",            
+        },
+        ...
     ]
 }
 ```
@@ -46,9 +55,16 @@ In your repository’s root directory, you will find or create an `aicrowd.json`
    - `"multi-turn-qa"`
 
 2. **`gpu`:** `true` if your solution requires GPU acceleration, otherwise `false`.
-3. **`hf_models`:** A list of Hugging Face models your agent depends on. These models **must** be publicly available **or** the `aicrowd` HF account must have access.
+3. **`hf_models`:** A list of Hugging Face models your agent depends on. These models **must** be publicly available **or** the `aicrowd` HF account must have access. During evaluation, internet access will be disabled and `HF_HUB_OFFLINE=1` environment variable will be set. 
 
-> **Important**: If your model is private, grant the [`aicrowd`](https://huggingface.co/aicrowd) user permission to pull it, or your submission **will fail**.
+The evaluators will ensure that before the evaluation begins (in a container without network access), these models are available in the local huggingface cache of the evaluation container.
+
+The keys for the `model_spec` dictionary can include any parameter supported by the [`huggingface_hub.snapshot_download`](https://huggingface.co/docs/huggingface_hub/v0.30.2/en/package_reference/file_download#huggingface_hub.snapshot_download) function.
+
+**Important:**
+- Models specified must be publicly available, or the [aicrowd Hugging Face account](https://huggingface.co/aicrowd) must be explicitly granted access.
+- If your model repository is private, you must grant access to the [`aicrowd` user](https://huggingface.co/aicrowd). Otherwise, your submission will fail.
+
 
 ### 2.2 requirements.txt 🗒️
 
@@ -131,14 +147,22 @@ This **tagged commit** is used to build and evaluate your model, generating a sc
     "challenge_id": "multi-source-augmentation",
     "gpu": true,
     "hf_models": [
-        "meta-llama/Llama-3.2-11B-Vision-Instruct",
-        "my-org/my-custom-vision-model"
+        {
+            "repo_id": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+            "revision": "main"
+        },
+        {
+            "repo_id": "your-org/your-model",
+            "revision": "your-custom-revision",
+            "ignore_patterns": "*.md",            
+        },
+        ...
     ]
 }
 ```
-- Submits to the **multi-source** track
+- Submits to the **multi-source-augmentation** track
 - Requests GPU resources
-- Two HF models: the Llama 3.2 model + your custom vision model
+- Two HF models: the Llama 3.2 11B vision instruct model + your custom vision model
 
 ### 5.2 Example requirements.txt
 ```

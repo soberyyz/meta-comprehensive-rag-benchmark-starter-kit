@@ -2,8 +2,17 @@
     "challenge_id": "single-source-augmentation",
     "gpu": true,
     "hf_models": [
-        "meta-llama/Llama-3.2-11B-Vision-Instruct",
-        "sentence-transformers/all-MiniLM-L6-v2",
-        "openai/clip-vit-base-patch16"
+        {
+            "repo_id": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+            "revision": "main"
+        },
+        {
+            "repo_id": "sentence-transformers/all-MiniLM-L6-v2",
+            "revision": "main"   
+        },
+        {
+            "repo_id": "openai/clip-vit-base-patch16",
+            "revision": "main"
+        }
     ]
 }

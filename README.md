@@ -38,6 +38,10 @@ The Retrieval-Augmented Generation (RAG) paradigm has expanded to accommodate mu
 
 CRAG-MM contains three parts of data: the image set, the QA set, and the contents for retrieval.
 
+The datasets can be accessed as follows:
+- **Single-Turn:** [https://huggingface.co/datasets/crag-mm-2025/crag-mm-single-turn-public](https://huggingface.co/datasets/crag-mm-2025/crag-mm-single-turn-public)
+- **Multi-Turn:** [https://huggingface.co/datasets/crag-mm-2025/crag-mm-multi-turn-public](https://huggingface.co/datasets/crag-mm-2025/crag-mm-multi-turn-public)
+
 ## 🖼️ Image set
 CRAG-MM contains two types of images: egocentric images and normal images. The egocentric images were collected using RayBan Meta Smart Glasses 4 from first-person perspective. The normal images were collected from publicly available images on the web.
 
@@ -49,7 +53,7 @@ The dataset includes a mock image search API and a mock web search API to simula
 
 You can download the mock APIs with 
 ```
-pip install cragmm-search-pipeline==0.2.8
+pip install -U cragmm-search-pipeline
 ```
 
 `agents/rag_agent.py` shows a sample usage of the APIs. 

@@ -1,6 +1,6 @@
 # Baseline Implementations 🚀
 
-This document highlights the **baseline agents** available in the **`agents`** directory of this repository. These agents showcase different approaches to solving the **Meta CRAG-MM** challenge. We hope you’ll find them a **fun** and **instructive** starting point for your own creations! 🤖
+This document highlights the **baseline agents** available in the **`agents`** directory of this repository. These agents showcase different approaches to solving the **Meta CRAG-MM** benchmark. We hope you'll find them a **fun** and **instructive** starting point for your own creations! 🤖
 
 ---
 
@@ -17,50 +17,68 @@ Baselines demonstrate how to implement agents that comply with the [submission g
 
 ### Key Features
 
-- **Random String Generator**: Produces a random string of letters of variable length (between 2 and 16 characters).  
-- **Quick & Simple**: Illustrates the agent interface with minimal overhead.  
+- **Random String Generator**: Produces random strings of letters of variable length (between 2 and 16 characters).  
+- **Reference Implementation**: Illustrates the agent interface with minimal overhead.
+- **Batch Processing**: Demonstrates how to handle batch queries efficiently.
 - **No Real Intelligence**: Strictly for testing the evaluation pipeline.
 
 ### Usage Example
 
 ```python
 from agents.random_agent import RandomAgent
+from cragmm_search.search import UnifiedSearchPipeline
 
-agent = RandomAgent()
-response = agent.generate_response(query="What is this?", image="path/to/image.jpg")
-print(response)  # Outputs a random string, e.g. "abDUq hf"
+# Initialize the agent
+search_pipeline = UnifiedSearchPipeline(...)  # Or None for Single-source Augmentation track
+agent = RandomAgent(search_pipeline)
+
+# Get batch size for evaluation
+batch_size = agent.get_batch_size()  # Returns 16
+
+# Process a batch of queries
+queries = ["What is this?", "Describe this image."]
+images = [image1, image2]  # PIL Image objects
+message_histories = [[], []]  # Empty for single-turn conversations
+responses = agent.batch_generate_response(queries, images, message_histories)
+print(responses)  # Outputs random strings, e.g. ["abDUq hf", "xYz pQr"]
 ```
-
-> **Fun Fact**: This agent is ideal for verifying that your evaluation setup can handle any agent object without worrying about actual performance! 🎉
 
 ---
 
 ## 2. **LlamaVisionModel** 🦙
 
-**File**: [`agents/vlm_agent.py`](../agents/vlm_agent.py)  
+**File**: [`agents/vanilla_llama_vision_agent.py`](../agents/vanilla_llama_vision_agent.py)  
 **Class Name**: `LlamaVisionModel`
 
 ### Key Features
 
-- **Vision-Language Model**: Uses `meta-llama/Llama-3.2-11B-Vision-Instruct` via **Hugging Face**.
-- **Image + Text**: Processes an image (passed as a file path) plus a user query.
-- **Conversation History**: Demonstrates basic handling of multi-turn context.
-- **Inference**: Uses `MllamaForConditionalGeneration` and an `AutoProcessor` to generate responses.
+- **Vision-Language Model**: Uses `meta-llama/Llama-3.2-11B-Vision-Instruct` with vLLM for efficient inference.
+- **Image + Text Processing**: Handles PIL Image objects and text queries together.
+- **Conversation History**: Supports multi-turn conversations with conversation history.
+- **Batch Processing**: Efficiently processes multiple queries and images in parallel.
+- **Optimized Configuration**: Includes settings for running on a single NVIDIA L40s GPU.
 
 ### Usage Example
 
 ```python
-from agents.vlm_agent import LlamaVisionModel
+from PIL import Image
+from agents.vanilla_llama_vision_agent import LlamaVisionModel
+from cragmm_search.search import UnifiedSearchPipeline
 
-agent = LlamaVisionModel()
-response = agent.generate_response(
-    query="Where was this photo taken?",
-    image="path/to/image.jpg"
-)
-print(response)
+# Initialize the agent
+search_pipeline = UnifiedSearchPipeline(...)  # Or None for Single-source Augmentation track
+agent = LlamaVisionModel(search_pipeline)
+
+# Process a batch of queries
+queries = ["Where was this photo taken?", "What can you see in this image?"]
+images = [Image.open("path/to/image1.jpg"), Image.open("path/to/image2.jpg")]
+message_histories = [[], []]  # Empty for single-turn conversations
+
+responses = agent.batch_generate_response(queries, images, message_histories)
+print(responses)
 ```
 
-> **Note**: This agent is a straightforward “vision + text” pipeline. For details on how to incorporate your own vision-language models, see [agents/README.md](../agents/README.md).
+> **Note**: This agent demonstrates how to efficiently use the Llama Vision model with the vLLM library for faster inference.
 
 ---
 
@@ -71,24 +89,34 @@ print(response)
 
 ### Key Features
 
-- **Retrieval-Augmented Generation**: Uses `UnifiedSearchPipeline` to gather external text snippets from both web pages and images (via a search index).
-- **Automatic Summaries**: Summarizes the image content before searching, then appends search snippets to the final query.
-- **Multi-Source**: Intended to show how RAG can integrate **image-based** and **web-based** retrieval in a single agent.
+- **Retrieval-Augmented Generation**: Uses `UnifiedSearchPipeline` to gather external text snippets based on image content and queries.
+- **Batch Processing**: Efficiently processes multiple queries in a single batch.
+- **Two-Step Approach**:
+  1. First summarizes images to generate effective search terms
+  2. Then retrieves relevant information and incorporates it into the responses
+- **Enhanced Prompting**: Structures prompts with retrieved context for better responses.
 
 ### Usage Example
 
 ```python
+from PIL import Image
 from agents.rag_agent import SimpleRAGAgent
+from cragmm_search.search import UnifiedSearchPipeline
 
-agent = SimpleRAGAgent()
-response = agent.generate_response(
-    query="What type of car is this, and how can I fix its broken tail light?",
-    image="path/to/car_photo.jpg"
-)
-print(response)
+# Initialize the agent (RAG agent requires a search pipeline)
+search_pipeline = UnifiedSearchPipeline(...)
+agent = SimpleRAGAgent(search_pipeline)
+
+# Process a batch of queries
+queries = ["What type of car is this?", "What landmark is shown in this photo?"]
+images = [Image.open("path/to/car.jpg"), Image.open("path/to/landmark.jpg")]
+message_histories = [[], []]  # Empty for single-turn conversations
+
+responses = agent.batch_generate_response(queries, images, message_histories)
+print(responses)
 ```
 
-> **Pro Tip**: Because RAG methods involve external data, you may want to refine your prompting and ranking to ensure relevant search hits are included. See the code for further insights! 🤓
+> **Pro Tip**: The RAG agent demonstrates how to combine vision-language models with external knowledge retrieval. It's particularly useful for queries requiring factual information beyond what's directly visible in the image.
 
 ---
 
@@ -96,7 +124,7 @@ print(response)
 
 1. **[Submission Guidelines](../docs/submission.md)** – Explains how to structure your repo and push your agent for evaluation.
 2. **[Agent Development Guide](../agents/README.md)** – Details how to create or modify an agent, including the `BaseAgent` interface.
-3. **[Local Evaluation Script](../local_evaluation.py)** – Lets you test agents on the CRAG-MM dataset splits (e.g., `sample`) for quick iterations.
+3. **[Local Evaluation Script](../local_evaluation.py)** – Lets you test agents on the CRAG-MM dataset splits for quick iterations.
 
 ---
 
@@ -110,7 +138,7 @@ print(response)
    ```
 3. Run local evaluation:
    ```bash
-   python local_evaluation.py --dataset_type single-turn --split sample --num_eval=10
+   python local_evaluation.py --dataset-type single-turn --split validation --num-conversations 10 --display-conversations 3
    ```
 
 ---
@@ -119,8 +147,9 @@ print(response)
 
 1. **Pick a Baseline** that resonates with your approach.  
 2. **Clone** it or **start fresh** with the [`BaseAgent`](../agents/base_agent.py).  
-3. **Implement** your own fancy method—be it advanced prompt engineering, improved retrieval logic, or cutting-edge generative LLM.  
-4. **Submit** your creation by following the instructions in [submission.md](../docs/submission.md)!  
+3. **Implement** your own approach - whether it's enhanced prompting, custom retrieval methods, or a specialized vision model.
+4. **Test locally** with the evaluation script to ensure everything works as expected.
+5. **Submit** your creation by following the instructions in [submission.md](../docs/submission.md)!  
 
 ---
 
