@@ -132,9 +132,9 @@ This **tagged commit** is used to build and evaluate your model, generating a sc
 
 ## 4. Hardware & Evaluation Environment
 
-1. **Hardware**: Your code will run on an **NVIDIA L40s GPU** with 4 vCPUs, **32 GB RAM**, and no internet access (`HF_HUB_OFFLINE=1`).
+1. **Hardware**: Your code will run on an **NVIDIA L40s GPU** with 4 vCPUs, **32GB RAM**, and **48GB of GPU Memory** and no internet access (`HF_HUB_OFFLINE=1`).
 2. **Initialization Time**: You have **10 minutes** to download models and set up your environment.
-3. **Response Time**: Each call to your agent’s `generate_response()` must finish within **10 seconds**.
+3. **Response Time**: Each call to your agent’s `batch_generate_response()` must finish within **10 seconds x agent.get_batch_size()** .
 4. **No Internet**: Any code that tries to reach out to external URLs will fail. Ensure your model and all dependencies are accessible offline via `hf_models` or your Docker image.
 
 ---
@@ -175,20 +175,15 @@ some-retrieval-lib>=0.1.3
 
 ### 5.3 Example Dockerfile
 ```dockerfile
-FROM nvidia/cuda:12.2.0-cudnn8-runtime-ubuntu22.04
+FROM python:3.10-slim-bookworm
 
-WORKDIR /workspace
-COPY requirements.txt .
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip install --progress-bar off --no-cache-dir -U pip==21.0.1
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --progress-bar off --no-cache-dir -r /tmp/requirements.txt
 
-# Copy your entire codebase
+WORKDIR /home/aicrowd
 COPY . .
 
-ENV HF_HUB_OFFLINE=1
-ENV PYTHONUNBUFFERED=1
-
-CMD ["python", "local_evaluation.py", "--dataset_type", "single-turn", "--split", "sample"]
 ```
 
 ---

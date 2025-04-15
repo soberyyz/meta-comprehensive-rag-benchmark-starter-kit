@@ -27,7 +27,9 @@ NUM_SEARCH_RESULTS = 3
 
 class SimpleRAGAgent(BaseAgent):
     """
-    SimpleRAGAgent demonstrates Retrieval-Augmented Generation (RAG) for the CRAG-MM benchmark.
+    SimpleRAGAgent demonstrates all the basic components you will need to create your 
+    RAG submission for the CRAG-MM benchmark.
+    Note: This implementation is not tuned for performance, and is intended for demonstration purposes only.
     
     This agent enhances responses by retrieving relevant information through a search pipeline
     and incorporating that context when generating answers. It follows a two-step approach:
