@@ -67,7 +67,6 @@ def get_system_message() -> str:
         "1. The prediction is correct if it captures all the key information from the ground truth.\n"
         "2. The prediction is correct even if phrased differently as long as the meaning is the same.\n"
         "3. The prediction is incorrect if it contains incorrect information or is missing essential details.\n"
-        "4. If the user clearly states \"I don't know\", count it as a \"miss\", not a hallucination.\n\n"
         "Output a JSON object with a single field 'accuracy' whose value is true or false."
     )
 
@@ -133,7 +132,7 @@ def evaluate_response(
     is_correct = is_exact_match
 
     # Use semantic evaluation if not an exact match and an evaluation model is provided.
-    if not is_exact_match and eval_model_name:
+    if not is_idk and not is_exact_match and eval_model_name:
         local_openai_client = OpenAI()
         messages = [
             {"role": "system", "content": get_system_message()},
@@ -142,9 +141,8 @@ def evaluate_response(
         api_response = attempt_api_call(local_openai_client, eval_model_name, messages)
         if api_response:
             is_semantically_correct = api_response.accuracy
-            if not is_idk:
-                is_correct = is_semantically_correct
-    elif is_exact_match:
+            is_correct = is_semantically_correct
+    if is_exact_match:
         is_semantically_correct = True
 
     return {
