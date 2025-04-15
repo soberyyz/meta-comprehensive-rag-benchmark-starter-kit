@@ -169,7 +169,7 @@ def display_results(console: Console, turn_evaluation_results_df: pd.DataFrame, 
     metrics_table.add_row("Exact matches", str(scores_dictionary["correct_exact"]))
     metrics_table.add_row('"I don\'t know" responses', str(scores_dictionary["miss"]))
     metrics_table.add_row("Hallucinated responses", str(scores_dictionary["hallucination"]))
-    metrics_table.add_row("Exact accuracy", f"{scores_dictionary['exact_accuracy']:.2%}")
+    metrics_table.add_row("Exact accuracy", f"{scores_dictionary['exact_match']:.2%}")
     metrics_table.add_row("Accuracy", f"{scores_dictionary['accuracy']:.2%}")
     metrics_table.add_row("Missing rate", f"{scores_dictionary['missing']:.2%}")
     metrics_table.add_row("Hallucination rate", f"{scores_dictionary['hallucination_rate']:.2%}")
