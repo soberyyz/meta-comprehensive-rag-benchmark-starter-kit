@@ -207,7 +207,6 @@ class SimpleRAGAgent(BaseAgent):
         
         # Retrieve relevant information for each query
         for i, search_query in enumerate(search_queries):
-            print(f"Searching for query {i+1}/{len(search_queries)}: {search_query[:50]}{'...' if len(search_query) > 50 else ''}")
             results = self.search_pipeline(search_query, k=NUM_SEARCH_RESULTS)
             search_results_batch.append(results)
         
