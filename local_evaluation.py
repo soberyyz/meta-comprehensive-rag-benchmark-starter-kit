@@ -197,7 +197,7 @@ class CRAGEvaluator:
         # Instantiate the CRAG turn based batch iterator 
         self.batch_iterator = CRAGTurnBatchIterator(dataset=self.dataset, batch_size=batch_size, shuffle=False)
 
-    def generate_agent_responses(self, batch_progress_callback: Callable[[int, int], None] = None) -> None:
+    def generate_agent_responses(self, progress_callback: Callable[[int, int], None] = None) -> None:
         """
         Phase 1: Generate agent responses for each turn in the dataset.
 
@@ -257,9 +257,9 @@ class CRAGEvaluator:
                 })
                 self.session_ids_evaluated.add(batch["session_ids"][idx])
 
-            if batch_progress_callback:
+            if progress_callback:
                 conversations_evaluated = len(self.session_ids_evaluated)
-                batch_progress_callback(conversations_evaluated, self.conversations_count)
+                progress_callback(conversations_evaluated, self.conversations_count)
 
             if len(self.session_ids_evaluated) > self.conversations_count:
                 console.print(f"[yellow]Already evaluated {len(self.session_ids_evaluated)} conversations. Abruptly stopping evaluation.[/yellow]")
@@ -267,7 +267,8 @@ class CRAGEvaluator:
 
     def evaluate_agent_responses(
         self,
-        turn_data: list[dict[str, any]]
+        turn_data: list[dict[str, any]],
+        progress_callback: Callable[[int, int], None] = None
     ) -> tuple[dict[str, pd.DataFrame], dict[str, dict[str, float]]]:
         """
         Phase 2: Evaluate agent responses and calculate scores.
@@ -281,8 +282,10 @@ class CRAGEvaluator:
         results = []
         with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
             futures = [executor.submit(self.evaluate_response, data) for data in turn_data]
-            for future in tqdm.tqdm(as_completed(futures), total=len(futures), desc="Evaluating responses", disable=not self.show_progress):
+            for future_idx, future in tqdm.tqdm(enumerate(as_completed(futures)), total=len(futures), desc="Evaluating responses", disable=not self.show_progress):
                 results.append(future.result())
+                if progress_callback is not None:
+                    progress_callback(future_idx, len(turn_data))
 
         # Convert the interim evaluation results to a pandas dataframe
         turn_evaluation_results_df = pd.DataFrame(results)
@@ -387,14 +390,21 @@ class CRAGEvaluator:
         self.initialize_evaluation()
         
         # Phase 1: Generate agent responses (updates internal state)
-        def _batch_progress_callback(conversations_evaluated: int, total_conversations: int) -> None:
+        def _generation_progress_callback(conversations_evaluated: int, total_conversations: int) -> None:
             # Can be useful to track progress of the evaluation
-            console.print(f"[blue]Generated responses for {conversations_evaluated}/{total_conversations} conversations[/blue]")
+            # console.log(f"[blue]Generated responses for {conversations_evaluated}/{total_conversations} conversations[/blue]")
+            pass
             
-        self.generate_agent_responses(_batch_progress_callback)
+        self.generate_agent_responses(_generation_progress_callback)
         
         # Phase 2: Evaluate responses using stored turn data
-        turn_evaluation_results, score_dictionaries = self.evaluate_agent_responses(self.all_turn_data)
+        
+        def _evaluation_progress_callback(turn_evaluated: int, total_turns: int) -> None:
+            # Can be useful to track progress of the evaluation
+            # console.log(f"[blue]Evaluated {turn_evaluated}/{total_turns} turns[/blue]")
+            pass
+            
+        turn_evaluation_results, score_dictionaries = self.evaluate_agent_responses(self.all_turn_data, _evaluation_progress_callback)
         return turn_evaluation_results, score_dictionaries
 
 
