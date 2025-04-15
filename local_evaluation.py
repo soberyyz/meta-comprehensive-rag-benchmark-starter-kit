@@ -157,27 +157,27 @@ def evaluate_response(
     }
 
 
-def evaluate_agent(
+def initialize_evaluation(
     dataset: Dataset,
     agent: BaseAgent,
     eval_model_name: str | None = None,
     num_conversations: int | None = None,
     show_progress: bool = True,
     num_workers: int = DEFAULT_NUM_WORKERS,
-) -> tuple[dict[str, any], dict[str, any]]:
+) -> tuple[CRAGTurnBatchIterator, int, dict[str, str], list[dict[str, any]], set[str], int]:
     """
-    Evaluate an agent on a dataset and return performance metrics.
-
+    Initialize variables needed for agent evaluation.
+    
     Args:
         dataset: The dataset to evaluate on.
-        agent: The agent to evaluate (must implement generate_response).
+        agent: The agent to evaluate.
         eval_model_name: OpenAI model name for semantic evaluation (optional).
         num_conversations: Maximum number of conversations to evaluate (None for all).
         show_progress: Whether to display a progress bar.
         num_workers: Number of parallel workers for evaluation.
-
+        
     Returns:
-        A tuple containing a dictionary of turn evaluation results and a dictionary of scores.
+        A tuple containing initialized variables needed for the evaluation.
     """
     console.print(f"[blue]Starting evaluation with {num_workers} workers[/blue]")
     if eval_model_name:
@@ -186,13 +186,39 @@ def evaluate_agent(
     num_conversations = len(dataset) if num_conversations is None else min(num_conversations, len(dataset))
     batch_size = int(np.clip(agent.get_batch_size(), MIN_BATCH_SIZE, MAX_BATCH_SIZE))
     session_ids_evaluated = set()
-
-    all_turn_data: list[dict[str, any]] = []
-    agent_response_map: dict[str, str] = {}
+    all_turn_data = []
+    agent_response_map = {}
     
-    # Instantiate the CRAG turb based batch iterator 
+    # Instantiate the CRAG turn based batch iterator 
     crag_turn_batch_iterator = CRAGTurnBatchIterator(dataset=dataset, batch_size=batch_size, shuffle=False)
+    
+    return crag_turn_batch_iterator, num_conversations, agent_response_map, all_turn_data, session_ids_evaluated, num_workers
 
+
+def generate_agent_responses(
+    crag_turn_batch_iterator: CRAGTurnBatchIterator,
+    agent: BaseAgent,
+    num_conversations: int,
+    agent_response_map: dict[str, str],
+    all_turn_data: list[dict[str, any]],
+    session_ids_evaluated: set[str],
+    show_progress: bool = True,
+) -> tuple[dict[str, str], list[dict[str, any]], set[str]]:
+    """
+    Phase 1: Generate agent responses for each turn in the dataset.
+    
+    Args:
+        crag_turn_batch_iterator: Iterator over CRAG turns.
+        agent: The agent to evaluate.
+        num_conversations: Maximum number of conversations to evaluate.
+        agent_response_map: Dictionary mapping interaction IDs to agent responses.
+        all_turn_data: List to store turn data.
+        session_ids_evaluated: Set of session IDs that have been evaluated.
+        show_progress: Whether to display a progress bar.
+        
+    Returns:
+        Updated agent_response_map, all_turn_data, and session_ids_evaluated.
+    """
     # Phase 1: Generate agent responses
     for batch in tqdm.tqdm(crag_turn_batch_iterator, desc="Generating responses", disable=not show_progress):
         interaction_ids = batch["interaction_ids"]
@@ -248,7 +274,28 @@ def evaluate_agent(
         if len(session_ids_evaluated) > num_conversations:
             console.print(f"[yellow]Already evaluated {len(session_ids_evaluated)} conversations. Abruptly stopping evaluation.[/yellow]")
             break
+            
+    return agent_response_map, all_turn_data, session_ids_evaluated
 
+
+def evaluate_agent_responses(
+    all_turn_data: list[dict[str, any]],
+    eval_model_name: str | None,
+    num_workers: int,
+    show_progress: bool = True,
+) -> tuple[dict[str, pd.DataFrame], dict[str, dict[str, float]]]:
+    """
+    Phase 2: Evaluate agent responses and calculate scores.
+    
+    Args:
+        all_turn_data: List of turn data including agent responses.
+        eval_model_name: OpenAI model name for semantic evaluation (optional).
+        num_workers: Number of parallel workers for evaluation.
+        show_progress: Whether to display a progress bar.
+        
+    Returns:
+        A tuple containing turn evaluation results and score dictionaries.
+    """
     # Phase 2: Evaluate responses in parallel
     all_turn_evaluation_results = p_map(
         lambda data: evaluate_response(data, eval_model_name),
@@ -258,7 +305,7 @@ def evaluate_agent(
         disable=not show_progress,
     )
 
-    # convert the interim evaluation results to a pandas dataframe
+    # Convert the interim evaluation results to a pandas dataframe
     turn_evaluation_results_df = pd.DataFrame(all_turn_evaluation_results)
     turn_evaluation_results_df = turn_evaluation_results_df.sort_values(by=["session_id", "turn_idx"])
 
@@ -269,6 +316,47 @@ def evaluate_agent(
 
     turn_evaluation_results = {"all": turn_evaluation_results_df, "ego": ego_turn_evaluation_results_df}
     score_dictionaries = {"all": all_scores_dictionary, "ego": ego_scores_dictionary}
+    
+    return turn_evaluation_results, score_dictionaries
+
+
+def evaluate_agent(
+    dataset: Dataset,
+    agent: BaseAgent,
+    eval_model_name: str | None = None,
+    num_conversations: int | None = None,
+    show_progress: bool = True,
+    num_workers: int = DEFAULT_NUM_WORKERS,
+) -> tuple[dict[str, any], dict[str, any]]:
+    """
+    Evaluate an agent on a dataset and return performance metrics.
+
+    Args:
+        dataset: The dataset to evaluate on.
+        agent: The agent to evaluate (must implement generate_response).
+        eval_model_name: OpenAI model name for semantic evaluation (optional).
+        num_conversations: Maximum number of conversations to evaluate (None for all).
+        show_progress: Whether to display a progress bar.
+        num_workers: Number of parallel workers for evaluation.
+
+    Returns:
+        A tuple containing a dictionary of turn evaluation results and a dictionary of scores.
+    """
+    # Phase 0: Initialize variables
+    crag_turn_batch_iterator, num_conversations, agent_response_map, all_turn_data, session_ids_evaluated, num_workers = initialize_evaluation(
+        dataset, agent, eval_model_name, num_conversations, show_progress, num_workers
+    )
+    
+    # Phase 1: Generate agent responses
+    agent_response_map, all_turn_data, session_ids_evaluated = generate_agent_responses(
+        crag_turn_batch_iterator, agent, num_conversations, agent_response_map, all_turn_data, session_ids_evaluated, show_progress
+    )
+    
+    # Phase 2: Evaluate responses
+    turn_evaluation_results, score_dictionaries = evaluate_agent_responses(
+        all_turn_data, eval_model_name, num_workers, show_progress
+    )
+    
     return turn_evaluation_results, score_dictionaries
 
 
