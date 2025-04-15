@@ -71,7 +71,6 @@ Task #2 in addition provides a web search mock API as a second retrieval source.
 ## Task #3: Multi-Turn QA
 Task #3 tests the system's ability to conduct multi-turn conversations. Each conversation contains 2–6 turns. Except the first turn, questions in later turns may or may not need the image for answering the questions. Task #3 tests context understanding for smooth multi-turn conversations.
 
-**Note: Task #3 is yet open for submission.**
 
 # 📏 Evaluation Metrics
 
