@@ -313,7 +313,7 @@ def calculate_scores(turn_evaluation_results_df: pd.DataFrame) -> dict[str, floa
     miss = turn_evaluation_results_df["is_miss"].sum()
     hallucination = total - (correct + miss)
     
-    exact_match = correct_exact / total
+    exact_accuracy = correct_exact / total
     accuracy = correct / total
     missing = miss / total
     hallucination_rate = hallucination / total
@@ -326,7 +326,7 @@ def calculate_scores(turn_evaluation_results_df: pd.DataFrame) -> dict[str, floa
         "correct": float(correct),
         "miss": float(miss),
         "hallucination": float(hallucination),
-        "exact_match": float(exact_match),
+        "exact_accuracy": float(exact_accuracy),
         "accuracy": float(accuracy),
         "missing": float(missing),
         "hallucination_rate": float(hallucination_rate),
