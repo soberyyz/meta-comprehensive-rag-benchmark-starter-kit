@@ -187,8 +187,8 @@ def display_results(console: Console, turn_evaluation_results_df: pd.DataFrame, 
             else:
                 table.add_column("interaction_id", style="dim")
             table.add_column("Query", style="dim")
-            table.add_column("Ground Truth", style="dim")
             table.add_column("Agent Response", style="dim")
+            table.add_column("Ground Truth", style="dim")
             table.add_column("API Response", style="dim")
             table.add_column("Evaluation Result", style="dim")
             return table
@@ -215,8 +215,8 @@ def display_results(console: Console, turn_evaluation_results_df: pd.DataFrame, 
                     table.add_row(  
                                 f"{row['turn_idx']}", 
                                 f"[bold cyan]{row['query']}[/bold cyan]", 
+                                f"[bold yellow]{row['agent_response']}[/bold yellow]",
                                 f"[bold green]{row['ground_truth']}[/bold green]", 
-                                f"[bold yellow]{row['agent_response']}[/bold yellow]", 
                                 f"[bold blue]{str(row['api_response'])[:100]}[/bold blue]", 
                                 f"[bold {status_style}]{status_text}[/bold {status_style}]"
                                 )
@@ -228,8 +228,8 @@ def display_results(console: Console, turn_evaluation_results_df: pd.DataFrame, 
                 table.add_row(  
                             f"{row['interaction_id'][:5]}",
                             f"[bold cyan]{row['query']}[/bold cyan]", 
-                            f"[bold green]{row['ground_truth']}[/bold green]", 
                             f"[bold yellow]{row['agent_response']}[/bold yellow]", 
+                            f"[bold green]{row['ground_truth']}[/bold green]", 
                             f"[bold blue]{str(row['api_response'])[:100]}[/bold blue]", 
                             f"[bold {status_style}]{status_text}[/bold {status_style}]"
                             )
