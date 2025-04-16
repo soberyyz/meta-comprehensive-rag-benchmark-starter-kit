@@ -345,7 +345,7 @@ class CRAGEvaluator:
         accuracy = correct / total
         missing = miss / total
         hallucination_rate = hallucination / total
-        truthfulness_score = (2 * correct + miss) / (total - 1) if total > 1 else 0.0
+        truthfulness_score = ((2 * correct + miss) / total) - 1 if total > 1 else 0.0
         mean_multi_turn_conversation_score = np.mean(list(multi_turn_conversation_score_map.values()))
 
         scores_dictionary = {
