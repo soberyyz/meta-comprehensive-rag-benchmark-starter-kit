@@ -20,7 +20,7 @@ class RandomAgent(BaseAgent):
     
     Attributes:
         search_pipeline (UnifiedSearchPipeline): Pipeline for searching relevant information.
-            This will be None for the 'Single-source Augmentation' track.
+            Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
     """
     
     def __init__(self, search_pipeline: UnifiedSearchPipeline):
@@ -29,7 +29,7 @@ class RandomAgent(BaseAgent):
         
         Args:
             search_pipeline (UnifiedSearchPipeline): A pipeline for searching web and image content.
-                This will be None if running in the 'Single-source Augmentation' track.
+                Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
         """
         super().__init__(search_pipeline)
         print("Initializing RandomAgent - reference implementation")

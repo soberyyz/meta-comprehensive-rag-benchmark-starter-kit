@@ -16,7 +16,7 @@ class BaseAgent:
     
     Attributes:
         search_pipeline (UnifiedSearchPipeline): Pipeline for searching relevant information.
-            This will be None for the 'Single-source Augmentation' track.
+            Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
     """
     
     def __init__(self, search_pipeline: UnifiedSearchPipeline):
@@ -25,10 +25,9 @@ class BaseAgent:
         
         Args:
             search_pipeline (UnifiedSearchPipeline): A pipeline for searching web and image content.
-                This will be None if running in the 'Single-source Augmentation' track.
+            Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
         """
         self.search_pipeline = search_pipeline
-        # Note: the search pipeline will be set to None in case of Single-source Augmentation track
     
     def get_batch_size(self) -> int:
         """

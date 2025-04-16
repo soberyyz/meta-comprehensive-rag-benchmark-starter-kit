@@ -18,7 +18,7 @@ jinja2>=3.1.0
 
 # API integrations
 openai
-cragmm-search-pipeline>=0.2.10
+cragmm-search-pipeline>=0.2.12
 chromadb>=1.0.0
 
 # Misc

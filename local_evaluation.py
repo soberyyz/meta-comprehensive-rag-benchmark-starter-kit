@@ -432,9 +432,9 @@ def main() -> None:
         help="Number of conversations to evaluate (default: -1). -1 evaluates all conversations, while a positive number evaluates that many conversations.",
     )
     parser.add_argument(
-        "--suppress-search-api",
+        "--suppress-web-search-api",
         action="store_true",
-        help="Suppress search API when calling the agent"
+        help="Suppress web search API when calling the agent"
     )
     parser.add_argument(
         "--display-conversations",
@@ -504,20 +504,21 @@ def main() -> None:
         args.num_conversations = len(dataset[split_to_use])
 
     # Suppress web search API if the flag is set - useful for Task 1 (Single-source Augmentation)
-    if args.suppress_search_api:
-        search_pipeline = None
-    else:
-        search_api_text_model_name = "sentence-transformers/all-MiniLM-L6-v2"
-        search_api_image_model_name = "openai/clip-vit-base-patch16"
-        search_api_web_hf_dataset_id = "crag-mm-2025/web-search-index-validation"
-        search_api_image_hf_dataset_id = "crag-mm-2025/image-search-index-validation"
-
-        search_pipeline = UnifiedSearchPipeline(
-            text_model_name=search_api_text_model_name,
-            image_model_name=search_api_image_model_name,
-            web_hf_dataset_id=search_api_web_hf_dataset_id,
-            image_hf_dataset_id=search_api_image_hf_dataset_id,
-        )
+    search_api_text_model_name = "sentence-transformers/all-MiniLM-L6-v2"
+    search_api_image_model_name = "openai/clip-vit-base-patch16"
+    search_api_web_hf_dataset_id = "crag-mm-2025/web-search-index-validation"
+    search_api_image_hf_dataset_id = "crag-mm-2025/image-search-index-validation"
+        
+    if args.suppress_web_search_api:
+        # Suppress web search API - useful for Task 1 (Single-source Augmentation)
+        search_api_web_hf_dataset_id = None
+    
+    search_pipeline = UnifiedSearchPipeline(
+        text_model_name=search_api_text_model_name,
+        image_model_name=search_api_image_model_name,
+        web_hf_dataset_id=search_api_web_hf_dataset_id,
+        image_hf_dataset_id=search_api_image_hf_dataset_id,
+    )
 
     evaluator = CRAGEvaluator(
         dataset=dataset[split_to_use],

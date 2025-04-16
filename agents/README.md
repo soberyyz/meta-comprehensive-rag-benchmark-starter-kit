@@ -52,7 +52,7 @@ To create your own agent, follow these steps:
            # Initialize your model here
            # You have 10 minutes for initialization
            super().__init__(search_pipeline)
-           # Note: the search pipeline will be set to None in case of 'Single-source Augmentation' track
+           # Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
 
        def get_batch_size(self) -> int:
            # Return your preferred batch size (1-16)
@@ -78,7 +78,7 @@ To create your own agent, follow these steps:
 
 - **Initialization Time**: 10 minutes maximum
 - **Batch Processing**: The evaluator will process multiple queries at once based on your `get_batch_size()`
-- **Batch Response Time**: 
+- **Batch Response Time**: `10 s * agent.get_batch_size()` for each `agent.batch_generate_response(..)` call.
 - **Memory Usage**: Be mindful of GPU memory usage. Your submissions will have access to a single NVIDIA L40s GPU with 48GB of GPU Memory.
 
 ### 📝 Method Signatures

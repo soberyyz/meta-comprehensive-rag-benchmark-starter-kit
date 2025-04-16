@@ -37,7 +37,7 @@ class LlamaVisionModel(BaseAgent):
     
     Attributes:
         search_pipeline (UnifiedSearchPipeline): Pipeline for searching relevant information.
-            This will be None for the 'Single-source Augmentation' track.
+            Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
         model_name (str): Name of the Hugging Face model to use.
         max_gen_len (int): Maximum generation length for responses.
         llm (vllm.LLM): The vLLM model instance for inference.
@@ -52,7 +52,7 @@ class LlamaVisionModel(BaseAgent):
         
         Args:
             search_pipeline (UnifiedSearchPipeline): A pipeline for searching web and image content.
-                This will be None if running in the 'Single-source Augmentation' track.
+                Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
             model_name (str): Hugging Face model name to use for vision-language processing.
             max_gen_len (int): Maximum generation length for model outputs.
         """

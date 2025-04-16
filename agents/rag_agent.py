@@ -61,7 +61,8 @@ class SimpleRAGAgent(BaseAgent):
         
         Args:
             search_pipeline (UnifiedSearchPipeline): A pipeline for searching web and image content.
-                This must not be None for the RAG agent to function properly.
+                Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
+                      Hence, this implementation of the RAG agent is not suitable for Task 1 (Single-source Augmentation).
             model_name (str): Hugging Face model name to use for vision-language processing.
             max_gen_len (int): Maximum generation length for model outputs.
             
