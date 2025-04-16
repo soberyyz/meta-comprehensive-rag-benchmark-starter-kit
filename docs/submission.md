@@ -29,7 +29,7 @@ Ready to showcase your **CRAG-MM** solution on the leaderboard? Follow the steps
 
 ### 2.1 aicrowd.json 🗒️
 
-In your repository’s root directory, you will find or create an `aicrowd.json` file that might look like this:
+In your repository’s root directory, create or update the `aicrowd.json` file to specify key details for your submission:
 
 ```json
 {
@@ -43,30 +43,51 @@ In your repository’s root directory, you will find or create an `aicrowd.json`
         {
             "repo_id": "your-org/your-model",
             "revision": "your-custom-revision",
-            "ignore_patterns": "*.md",            
-        },
-        ...
+            "ignore_patterns": "*.md"
+        }
     ]
 }
 ```
-1. **`challenge_id`**: Must be one of:
-   - `"single-source-augmentation"`
-   - `"multi-source-augmentation"`
-   - `"multi-turn-qa"`
 
-2. **`gpu`:** `true` if your solution requires GPU acceleration, otherwise `false`.
-3. **`hf_models`:** A list of Hugging Face models your agent depends on. These models **must** be publicly available **or** the `aicrowd` HF account must have access. During evaluation, internet access will be disabled and `HF_HUB_OFFLINE=1` environment variable will be set. 
+- **`challenge_id`**: Select from one of the following:
+  - `"single-source-augmentation"`
+  - `"multi-source-augmentation"`
+  - `"multi-turn-qa"`
 
-The evaluators will ensure that before the evaluation begins (in a container without network access), these models are available in the local huggingface cache of the evaluation container.
+- **`gpu`**: Set to `true` if GPU acceleration is required, else `false`.
 
-The keys for the `model_spec` dictionary can include any parameter supported by the [`huggingface_hub.snapshot_download`](https://huggingface.co/docs/huggingface_hub/v0.30.2/en/package_reference/file_download#huggingface_hub.snapshot_download) function.
+- **`hf_models`**: List all Hugging Face models your agent uses. These models **must** be publicly accessible or explicitly shared with the `aicrowd` Hugging Face account. Before evaluation, these models will be pre-downloaded and cached locally in a container with no internet access (`HF_HUB_OFFLINE=1`).
 
-**Important:**
-- Models specified must be publicly available, or the [aicrowd Hugging Face account](https://huggingface.co/aicrowd) must be explicitly granted access.
-- If your model repository is private, you must grant access to the [`aicrowd` user](https://huggingface.co/aicrowd). Otherwise, your submission will fail.
+  > The `hf_models` entries support parameters compatible with [`huggingface_hub.snapshot_download`](https://huggingface.co/docs/huggingface_hub/v0.30.2/en/package_reference/file_download#huggingface_hub.snapshot_download).
 
+### 2.2 Providing Access to Private Hugging Face Models 🔒
 
-### 2.2 requirements.txt 🗒️
+If you use private Hugging Face models, you must explicitly grant access to the `aicrowd` account as follows:
+
+- **Create a dedicated Hugging Face organization** for your challenge participation:
+
+  1. Go to [Hugging Face](https://huggingface.co/) and create a new private organization (e.g., `your-team-cragmm`).
+  2. Add your team members to this organization.
+
+- **Grant Access**:
+
+  1. Add the [`aicrowd`](https://huggingface.co/aicrowd) Hugging Face user to your organization with **read access**.
+
+- **Specify the private model in `aicrowd.json`**:
+
+```json
+"hf_models": [
+    {
+        "repo_id": "your-team-cragmm/your-private-model",
+        "revision": "main"
+    }
+]
+```
+
+**Important**:
+- Failure to grant the `aicrowd` user access to your private model will cause your submission to fail.
+
+### 2.3 requirements.txt 🗒️
 
 All Python dependencies must be declared in `requirements.txt`. For example:
 
@@ -78,7 +99,7 @@ numpy>=1.24.0
 # Include any additional libraries your agent needs
 ```
 
-### 2.3 Dockerfile 🐳 (Optional)
+### 2.4 Dockerfile 🐳 (Optional)
 
 If you wish to further customize your environment, you can edit or create a `Dockerfile` in your repository root. For example:
 
@@ -96,8 +117,6 @@ COPY . /app
 # (Optional) Specify environment variables
 ENV HF_HUB_OFFLINE=1
 ```
-
-**Note**: The official evaluator merges your Dockerfile with some base layers. If your modifications conflict, the build may fail.
 
 ---
 
