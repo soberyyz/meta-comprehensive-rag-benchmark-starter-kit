@@ -183,14 +183,15 @@ python local_evaluation.py \
     --split validation \
     --num-conversations 100 \
     --display-conversations 3 \
-    --eval-model gpt-4o-mini
+    --eval-model gpt-4o-mini \
+    --suppress-web-search-api # Only include when evaluatingn for Single Source Augmentation Track, where web-search-api is not available but image-search-api is available
 ```
 
 Options:
 - `--dataset-type`: Choose between "single-turn" or "multi-turn"
 - `--split`: Dataset split to use ("validation", "public_test")
 - `--num-conversations`: Number of conversations to evaluate (-1 for all)
-- `--suppress-search-api`: Disable the search API for testing Single-source Augmentation
+- `--suppress-web-search-api`: Disable the search API for testing Single-source Augmentation
 - `--display-conversations`: Number of example conversations to display
 - `--eval-model`: OpenAI model for semantic evaluation (use 'None' to disable)
 - `--output-dir`: Directory to save evaluation results
