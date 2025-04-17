@@ -140,14 +140,13 @@ This also includes instructions on [specifying your software runtime](docs/submi
 **Note**: **Remember to accept the Challenge Rules** on the challenge page, **and** the task page before making your first submission.
 
 ## 💻 What hardware does my code run on?
-All submissions will be run on a single G6e instance with an NVIDIA L40s GPU with 48GB of GPU memory on AWS. Please note that:
-- LLaMA 3.2 11B-Vision and Pixtral 12B in full precision can run directly
-- Llama 3.2 90B-Vision in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
-- NVIDIA L40s is not using the latest architectures and hence might not be compatible with certain acceleration toolkits, so please make sure the submitted solution is compatible with the configuration
+All submissions will be run on a single `g6e.2xlarge` instance with an `NVIDIA L40s GPU` with `48GB of GPU memory` on AWS. Please note that:
+- `LLaMA 3.2 11B-Vision` and `Pixtral 12B` in full precision can run directly
+- `Llama 3.2 90B-Vision` in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
 
 Moreover, the following restrictions will also be imposed:
 - Network connection will be disabled
-- Each example will have a time-out limit of 30 seconds
+- Each conversation-turn will have a time-out limit of 10 seconds, and a batch of N turns (as configured by you `.get_batch_size()` function) will have a timeout of `N * 10 seconds`. 
 - To encourage concise answers, each answer will be truncated to 75 bpe tokens in the auto-eval
 
 ## 🏁 Baseline
