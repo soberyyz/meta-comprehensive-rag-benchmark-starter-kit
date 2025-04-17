@@ -16,19 +16,19 @@ from agents.prompts.summary import (
     SUMMARY_IMAGE_TEXT,
     SUMMARY_IMAGE_CONTENT
 )
-from retrieval.retrieval_for_competition import CompetitionRetriever
+from agents.retrieval.retrieval_for_competition import CompetitionRetriever
 
 
 # 图像处理包初始化
-from modelscope import (
+# modelscope
+from transformers import (
     AutoModelForCausalLM, 
     AutoTokenizer,
-    snapshot_download,
     pipeline
 )
 from PIL import Image
 import torch
-
+from loguru import logger
 
 # 分割
 from agents.segment_images import SamEncoder, SamDecoder, segment_image_per_point
@@ -40,8 +40,10 @@ class TeamAgent(BaseAgent):
     """It simply searches the image and the query, and append the retrieved text & image to the query"""
 
     def __init__(
-        self, model_id="meta-llama/Llama-3.2-11B-Vision-Instruct", max_gen_len=256, max_output_words_len=75
+        self, model_id="meta-llama/Llama-3.2-11B-Vision-Instruct", max_gen_len=256, max_output_words_len=75, local_model_path=None, local_data_path=None
     ):
+        """Initialize the agent with a model ID from HF. As per the challenge requirement, we only use LLaMA model"""
+
         """Initialize the agent with a model ID from HF. As per the challenge requirement, we only use LLaMA model"""
         self.model_id = model_id
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -51,37 +53,61 @@ class TeamAgent(BaseAgent):
         self.processor = AutoProcessor.from_pretrained(self.model_id)
         self.max_gen_len = max_gen_len
         self.max_output_words_len = max_output_words_len
-        self.search_pipeline = UnifiedSearchPipeline(
+        if local_model_path is not None:
+            self.search_pipeline = UnifiedSearchPipeline(
+                text_model_name=f"{local_model_path}/all-MiniLM-L6-v2",
+                image_model_name=f"{local_model_path}/clip-vit-base-patch16",
+                web_hf_dataset_id=f"{local_data_path}/web-search-index-public",
+                image_hf_dataset_id=f"{local_data_path}/image-search-index-public",
+            )
+            self.competition_retriever = CompetitionRetriever(
+                text_model_name=f"{local_model_path}/bge-base-en-v1.5",
+                image_model_name="",
+                text_reranker_name=f"{local_model_path}/bge-reranker-base",
+                image_reranker_name="",
+            )
+            # 初始化Ovis2-1B多模态模型
+            self.ovis_model = AutoModelForCausalLM.from_pretrained(
+                f'{local_model_path}/Ovis2-1B',
+                torch_dtype=torch.bfloat16,
+                device_map="auto",
+                trust_remote_code=True
+            )
+            self.ovis_tokenizer = AutoTokenizer.from_pretrained(
+                f'{local_model_path}/Ovis2-1B',
+                trust_remote_code=True
+            )
+        else:
+            self.search_pipeline = UnifiedSearchPipeline(
             text_model_name="sentence-transformers/all-MiniLM-L6-v2",
             image_model_name="openai/clip-vit-base-patch16",
             web_hf_dataset_id="crag-mm-2025/web-search-index-public",
             image_hf_dataset_id="crag-mm-2025/image-search-index-public",
-        )
-        self.competition_retriever = CompetitionRetriever(
-            text_model_name="BAAI/bge-base-en-v1.5",
-            image_model_name="",
-            text_reranker_name="BAAI/bge-reranker-base",
-            image_reranker_name="",
-        )
-        
-        # 初始化Ovis2-1B多模态模型
-        self.ovis_model = AutoModelForCausalLM.from_pretrained(
-            '/root/model_weight/Ovis2-1B',
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
-            trust_remote_code=True
-        )
-        self.ovis_tokenizer = AutoTokenizer.from_pretrained(
-            '/root/model_weight/Ovis2-1B',
-            trust_remote_code=True
-        )
-
+            )
+            self.competition_retriever = CompetitionRetriever(
+                text_model_name="BAAI/bge-base-en-v1.5",
+                image_model_name="",
+                text_reranker_name="BAAI/bge-reranker-base",
+                image_reranker_name="",
+            )
+            
+            # 初始化Ovis2-1B多模态模型
+            self.ovis_model = AutoModelForCausalLM.from_pretrained(
+                '/root/model_weight/Ovis2-1B',
+                torch_dtype=torch.bfloat16,
+                device_map="auto",
+                trust_remote_code=True
+            )
+            self.ovis_tokenizer = AutoTokenizer.from_pretrained(
+                '/root/model_weight/Ovis2-1B',
+                trust_remote_code=True
+            )
         # 初始化分割模型
         # TODO 修改segment_image_per_point
-        encoder_model = "onnx/efficientvit_sam_xl1_encoder.onnx"
-        decoder_model = "onnx/efficientvit_sam_xl1_decoder.onnx"
-        self.encoder = SamEncoder(model_path=encoder_model)
-        self.decoder = SamDecoder(model_path=decoder_model)
+        # encoder_model = "onnx/efficientvit_sam_xl1_encoder.onnx"
+        # decoder_model = "onnx/efficientvit_sam_xl1_decoder.onnx"
+        # self.encoder = SamEncoder(model_path=encoder_model)
+        # self.decoder = SamDecoder(model_path=decoder_model)
 
 
     def _get_llm_response(self, query, image=None) -> str:
@@ -212,9 +238,9 @@ class TeamAgent(BaseAgent):
         # First call the LLM to generate some keywords for the image (for future RAG).
         summarize_answer_image_content = self._get_image_content(image)
         summarize_answer_image_text = self._get_image_text(image)
-        image_info = "There is a image.\n\n The image content can be concluded as:\n"+summarize_answer_image_content + '\n\n'
+        image_info = "The image content can be concluded as:\n"+summarize_answer_image_content + '\n\n'
         image_info += "The text in the image can be concluded as:\n"+summarize_answer_image_text
-
+        logger.info(f"image_info: {image_info}")
         messages = [
             {
                 "role": "system",
@@ -239,12 +265,14 @@ class TeamAgent(BaseAgent):
         search_results_from_image_info = self._get_text_retrieval_result(image_info, k=3)
         search_results_from_user_query = self._get_text_retrieval_result(query, k=3)
         web_search_results = search_results_from_image_info + search_results_from_user_query
+        logger.info(f"web_search_results: {web_search_results}")
 
         # call the image search mock API
         search_results_from_image = self._get_image_retrieval_result(image, k=3)
         retrieval_image_mm_info, retrieval_image_entity_info = search_results_from_image
 
         context_str = "\n\n".join([retrieval_image_mm_info, retrieval_image_entity_info, web_search_results]) # TODO: 将所有来源进行集合@keke
+        logger.info(f"context_str: {context_str}")
 
         # put them in llm prompt.
         llm_prompt = RAG_BASELINE_PROMPT.format(
