@@ -29,28 +29,65 @@ Ready to showcase your **CRAG-MM** solution on the leaderboard? Follow the steps
 
 ### 2.1 aicrowd.json 🗒️
 
-In your repository’s root directory, you will find or create an `aicrowd.json` file that might look like this:
+In your repository’s root directory, create or update the `aicrowd.json` file to specify key details for your submission:
 
 ```json
 {
     "challenge_id": "single-source-augmentation",
     "gpu": true,
     "hf_models": [
-        "your-org/your-model"
+        {
+            "repo_id": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+            "revision": "main"
+        },
+        {
+            "repo_id": "your-org/your-model",
+            "revision": "your-custom-revision",
+            "ignore_patterns": "*.md"
+        }
     ]
 }
 ```
-1. **`challenge_id`**: Must be one of:
-   - `"single-source-augmentation"`
-   - `"multi-source-augmentation"`
-   - `"multi-turn-qa"`
 
-2. **`gpu`:** `true` if your solution requires GPU acceleration, otherwise `false`.
-3. **`hf_models`:** A list of Hugging Face models your agent depends on. These models **must** be publicly available **or** the `aicrowd` HF account must have access.
+- **`challenge_id`**: Select from one of the following:
+  - `"single-source-augmentation"`
+  - `"multi-source-augmentation"`
+  - `"multi-turn-qa"`
 
-> **Important**: If your model is private, grant the [`aicrowd`](https://huggingface.co/aicrowd) user permission to pull it, or your submission **will fail**.
+- **`gpu`**: Set to `true` if GPU acceleration is required, else `false`.
 
-### 2.2 requirements.txt 🗒️
+- **`hf_models`**: List all Hugging Face models your agent uses. These models **must** be publicly accessible or explicitly shared with the `aicrowd` Hugging Face account. Before evaluation, these models will be pre-downloaded and cached locally in a container with no internet access (`HF_HUB_OFFLINE=1`).
+
+  > The `hf_models` entries support parameters compatible with [`huggingface_hub.snapshot_download`](https://huggingface.co/docs/huggingface_hub/v0.30.2/en/package_reference/file_download#huggingface_hub.snapshot_download).
+
+### 2.2 Providing Access to Private Hugging Face Models 🔒
+
+If you use private Hugging Face models, you must explicitly grant access to the `aicrowd` account as follows:
+
+- **Create a dedicated Hugging Face organization** for your challenge participation:
+
+  1. Go to [Hugging Face](https://huggingface.co/) and create a new private organization (e.g., `your-team-cragmm`).
+  2. Add your team members to this organization.
+
+- **Grant Access**:
+
+  1. Add the [`aicrowd`](https://huggingface.co/aicrowd) Hugging Face user to your organization with **read access**.
+
+- **Specify the private model in `aicrowd.json`**:
+
+```json
+"hf_models": [
+    {
+        "repo_id": "your-team-cragmm/your-private-model",
+        "revision": "main"
+    }
+]
+```
+
+**Important**:
+- Failure to grant the `aicrowd` user access to your private model will cause your submission to fail.
+
+### 2.3 requirements.txt 🗒️
 
 All Python dependencies must be declared in `requirements.txt`. For example:
 
@@ -62,7 +99,7 @@ numpy>=1.24.0
 # Include any additional libraries your agent needs
 ```
 
-### 2.3 Dockerfile 🐳 (Optional)
+### 2.4 Dockerfile 🐳 (Optional)
 
 If you wish to further customize your environment, you can edit or create a `Dockerfile` in your repository root. For example:
 
@@ -80,8 +117,6 @@ COPY . /app
 # (Optional) Specify environment variables
 ENV HF_HUB_OFFLINE=1
 ```
-
-**Note**: The official evaluator merges your Dockerfile with some base layers. If your modifications conflict, the build may fail.
 
 ---
 
@@ -116,9 +151,9 @@ This **tagged commit** is used to build and evaluate your model, generating a sc
 
 ## 4. Hardware & Evaluation Environment
 
-1. **Hardware**: Your code will run on an **NVIDIA L40s GPU** with 4 vCPUs, **32 GB RAM**, and no internet access (`HF_HUB_OFFLINE=1`).
+1. **Hardware**: Your code will run on an **NVIDIA L40s GPU** with 4 vCPUs, **32GB RAM**, and **48GB of GPU Memory** and no internet access (`HF_HUB_OFFLINE=1`).
 2. **Initialization Time**: You have **10 minutes** to download models and set up your environment.
-3. **Response Time**: Each call to your agent’s `generate_response()` must finish within **10 seconds**.
+3. **Response Time**: Each call to your agent’s `batch_generate_response()` must finish within **10 seconds x agent.get_batch_size()** .
 4. **No Internet**: Any code that tries to reach out to external URLs will fail. Ensure your model and all dependencies are accessible offline via `hf_models` or your Docker image.
 
 ---
@@ -131,14 +166,22 @@ This **tagged commit** is used to build and evaluate your model, generating a sc
     "challenge_id": "multi-source-augmentation",
     "gpu": true,
     "hf_models": [
-        "meta-llama/Llama-3.2-11B-Vision-Instruct",
-        "my-org/my-custom-vision-model"
+        {
+            "repo_id": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+            "revision": "main"
+        },
+        {
+            "repo_id": "your-org/your-model",
+            "revision": "your-custom-revision",
+            "ignore_patterns": "*.md",            
+        },
+        ...
     ]
 }
 ```
-- Submits to the **multi-source** track
+- Submits to the **multi-source-augmentation** track
 - Requests GPU resources
-- Two HF models: the Llama 3.2 model + your custom vision model
+- Two HF models: the Llama 3.2 11B vision instruct model + your custom vision model
 
 ### 5.2 Example requirements.txt
 ```
@@ -151,20 +194,15 @@ some-retrieval-lib>=0.1.3
 
 ### 5.3 Example Dockerfile
 ```dockerfile
-FROM nvidia/cuda:12.2.0-cudnn8-runtime-ubuntu22.04
+FROM python:3.10-slim-bookworm
 
-WORKDIR /workspace
-COPY requirements.txt .
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+RUN pip install --progress-bar off --no-cache-dir -U pip==21.0.1
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --progress-bar off --no-cache-dir -r /tmp/requirements.txt
 
-# Copy your entire codebase
+WORKDIR /home/aicrowd
 COPY . .
 
-ENV HF_HUB_OFFLINE=1
-ENV PYTHONUNBUFFERED=1
-
-CMD ["python", "local_evaluation.py", "--dataset_type", "single-turn", "--split", "sample"]
 ```
 
 ---
