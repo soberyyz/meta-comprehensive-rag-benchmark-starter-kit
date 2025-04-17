@@ -2,6 +2,10 @@
 
 **CRAG-MM (Comprehensive RAG Benchmark for Multi-modal, Multi-turn)** is a factual visual question-answering dataset that focuses on real-world images and conversation-based question answering. It is designed to help you evaluate and train **retrieval-augmented generation (RAG)** systems for both **single-turn** and **multi-turn** scenarios.
 
+CRAG-MM is available on HuggingFace at the following links:
+- **Single-turn**: [https://huggingface.co/datasets/crag-mm-2025/crag-mm-single-turn-public](https://huggingface.co/datasets/crag-mm-2025/crag-mm-single-turn-public)
+- **Multi-turn**: [https://huggingface.co/datasets/crag-mm-2025/crag-mm-multi-turn-public](https://huggingface.co/datasets/crag-mm-2025/crag-mm-multi-turn-public)
+
 ---
 
 ## 1. Dataset Highlights
@@ -16,12 +20,10 @@
 
 ## 2. Data Splits
 
-CRAG-MM is typically divided into four main splits to support model development cycles:
-
-- **train**
+In publicly released `v0.1.1` of the CRAG-MM dataset, you can find the following splits:
 - **validation**
-- **test**
-- **sample** (small subset for quick debugging or prototyping)
+
+The **sample** split is now deprecated. 
 
 ---
 
@@ -34,15 +36,16 @@ An example entry (one Q&A about a single image) may look like:
 ```json
 {
   "session_id": "string",
-  "image": "path/to/image.jpg",
+  "image": Image(),
+  "image_url": "string",
+  "image_quality": "string",
   "turns": [
     {
       "interaction_id": "string",
-      "domain": "string", 
+      "domain": "string",
       "query_category": "string",
       "dynamism": "string",
       "query": "string",
-      "image_quality": "string"
     }
   ],
   "answers": [
@@ -54,11 +57,12 @@ An example entry (one Q&A about a single image) may look like:
 }
 ```
 - **`session_id`**: Unique identifier for this example.  
-- **`image`**: The image file (or path) for the single turn.  
+- **`image`**: The loaded PIL Image for the single turn. Can be None
+- **`ìmage_url`**: The image_url for conversations where `image` is set to None. 
 - **`turns`**: Contains exactly one turn in single-turn format.  
   - **`interaction_id`** links to the matching answer in `answers`.  
   - **`domain`**, **`query_category`**, **`dynamism`**, **`image_quality`**: Categorical labels describing the question and environment.  
-- **`answers`**: The list (usually length 1) containing the ground-truth answer.  
+- **`answers`**: The list (length 1) containing the ground-truth answer.  
 
 ### Multi-Turn Format
 
@@ -67,77 +71,68 @@ An example entry (conversation with multiple Q&As on the same image) may look li
 ```json
 {
   "session_id": "string",
-  "image": "path/to/image.jpg",
+  "image": Image(),
+  "image_url": "string",
+  "image_quality": "string",
   "turns": [
     {
-      "interaction_id": "turn0",
-      "domain": "string",
+      "interaction_id": "string",
+      "domain": "string", 
       "query_category": "string",
       "dynamism": "string",
       "query": "string",
-      "image_quality": "string"
     },
-    {
-      "interaction_id": "turn1",
-      "domain": "string",
-      "query_category": "string",
-      "dynamism": "string",
-      "query": "string",
-      "image_quality": "string"
-    }
+    ...
   ],
   "answers": [
     {
-      "interaction_id": "turn0",
+      "interaction_id": "string",
       "ans_full": "string"
     },
-    {
-      "interaction_id": "turn1",
-      "ans_full": "string"
-    }
+    ...
   ]
 }
 ```
 - **`session_id`**: Unique identifier for the entire conversation.  
 - **`image`**: One image shared across all turns.  
+- **`ìmage_url`**: The image_url for conversations where `image` is set to None. 
 - **`turns`**: Each user query is listed as a separate object in this array.  
+- **`interaction_id`** links to the matching answer in `answers`.  
+- **`domain`**, **`query_category`**, **`dynamism`**, **`image_quality`**: Categorical labels describing the question and environment.  
 - **`answers`**: Ground-truth answers, matching by `interaction_id`.
 
 ---
 
 ## 4. Accessing the Dataset
 
-### Option A: Hugging Face Datasets Library
-
 ```python
 from datasets import load_dataset
-
-# For single-turn data
-single_turn_data = load_dataset("crag-mm-2025/crag-mm-single-turn-public", revision="v0.1.0")
-
-# For multi-turn data
-multi_turn_data = load_dataset("crag-mm-2025/crag-mm-multi-turn-public", revision="v0.1.0")
-
-# Access a sample
-print(single_turn_data["sample"][0])
+# For single-turn dataset
+dataset = load_dataset("crag-mm-2025/crag-mm-single_turn-public", revision="v0.1.1")
+# For multi-turn dataset
+dataset = load_dataset("crag-mm-2025/crag-mm-multi_turn-public", revision="v0.1.1")
+# View available splits
+print(f"Available splits: {', '.join(dataset.keys())}")
+# Access examples
+example = dataset["validation"][0]
+print(f"Session ID: {example['session_id']}")
+print(f"Image: {example['image']}")
+print(f"Image URL: {example['image_url']}")
+"""
+Note: Either 'image' or 'image_url' will be provided in the dataset, but not necessarily both.
+When the actual image cannot be included, only the image_url will be available.
+The evaluation servers will nevertheless always include the loaded 'image' field.
+"""
+# Show image
+import matplotlib.pyplot as plt
+plt.imshow(example['image'])
 ```
 
-### Option B: Direct Download
-
-The dataset may also be downloadable as an archive (e.g., `.tar.gz`). Once you extract it, you’ll have the same JSON structures as described above.
+More details about the usage are available on the Huggingface dataset card. 
 
 ---
 
-## 5. Usage Tips
-
-1. **Preprocessing**: If your model uses images, consider resizing or normalizing them.  
-2. **Handling Multi-turn**: Make sure to maintain conversation context. Each turn depends on previous Q&A pairs in the same `session_id`.  
-3. **Evaluation**: Evaluate your responses with either strict exact-match accuracy or semantic metrics like LLM-based scoring.  
-4. **Retrieval-Augmentation**: Questions in CRAG-MM can require external knowledge. You can attach a retrieval pipeline (e.g., web search or knowledge-base search) to help answer complex queries.
-
----
-
-## 6. License & Citation
+## 5. License & Citation
 
 - **License**: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0).  
 - **Citation**: If you use CRAG-MM in your research, please cite:
@@ -151,8 +146,3 @@ The dataset may also be downloadable as an archive (e.g., `.tar.gz`). Once you e
 }
 ```
 
----
-
-### Happy Exploring!
-
-Whether you are building a next-gen virtual assistant or experimenting with multimodal retrieval, CRAG-MM offers a versatile and challenging environment to test and push the boundaries of your AI models. Good luck!
