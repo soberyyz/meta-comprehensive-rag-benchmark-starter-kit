@@ -15,6 +15,9 @@ AICROWD_SUBMISSION_BATCH_SIZE = 8
 # GPU utilization settings 
 # Change VLLM_TENSOR_PARALLEL_SIZE during local runs based on your available GPUs
 # For example, if you have 2 GPUs on the server, set VLLM_TENSOR_PARALLEL_SIZE=2. 
+# You may need to uncomment the following line to perform local evaluation with VLLM_TENSOR_PARALLEL_SIZE>1. 
+# os.environ['VLLM_WORKER_MULTIPROC_METHOD'] = 'spawn'
+
 #### Please ensure that when you submit, VLLM_TENSOR_PARALLEL_SIZE=1. 
 VLLM_TENSOR_PARALLEL_SIZE = 1 
 VLLM_GPU_MEMORY_UTILIZATION = 0.85 
