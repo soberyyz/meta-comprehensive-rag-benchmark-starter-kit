@@ -138,6 +138,8 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
 Please follow the instructions in [docs/submission.md](docs/submission.md) to make your first submission.
 This also includes instructions on [specifying your software runtime](docs/submission.md#specifying-software-runtime-and-dependencies), [code structure](docs/submission.md#code-structure-guidelines), [submitting to different tracks](docs/submission.md#submitting-to-different-tracks).
 
+For detailed instructions on securely setting up your submissions as Public Gated Hugging Face models, please refer to [Using Gated Hugging Face Models in Your Submission 🔒](huggingface-gated-models.md).
+
 **Note**: **Remember to accept the Challenge Rules** on the challenge page, **and** the task page before making your first submission.
 
 ## 💻 What hardware does my code run on?
