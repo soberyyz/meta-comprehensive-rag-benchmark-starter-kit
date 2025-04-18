@@ -56,7 +56,7 @@ You can download the mock APIs with
 pip install -U cragmm-search-pipeline
 ```
 
-`agents/rag_agent.py` shows a sample usage of the APIs. 
+[docs/search_api.md](docs/search_api.md) contains the documentations to the mock APIs, and [agents/rag_agent.py](agents/rag_agent.py) shows a sample usage of the APIs. 
 
 # 👨‍💻👩‍💻 Tasks
 
