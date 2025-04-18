@@ -1,8 +1,8 @@
 ### Using Gated Hugging Face Models in Your Submission 🔒
 
-The goal is to ensure your submissions remain secure and private while still being accessible to the evaluation servers. You can achieve this by wrapping your submissions as publicly visible but securely gated Hugging Face repositories.
+The goal is to ensure your models remain secure and private while still being accessible to the evaluation servers. You can achieve this by wrapping your models as publicly visible but securely gated Hugging Face repositories.
 
-To securely use Hugging Face models in your submissions, you must grant the `aicrowd` account access to your publicly visible but gated repository. **All repository names must include "aicrowd"** to ensure validation success.
+To securely use such gated public Hugging Face models in your submissions, you must grant the `aicrowd` account access to your publicly visible but gated repository. **All repository names must include "aicrowd"** to ensure validation success.
 
 - ✅ **Valid Example**: `team-aicrowd-my-model`
 - ❌ **Invalid Example**: `team-my-model`
