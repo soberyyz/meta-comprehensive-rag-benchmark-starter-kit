@@ -15,6 +15,7 @@ pydantic
 datasets
 Pillow
 jinja2>=3.1.0
+tokenizers
 
 # API integrations
 openai

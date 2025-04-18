@@ -31,6 +31,7 @@ from agents.user_config import UserAgent
 from crag_batch_iterator import CRAGTurnBatchIterator
 from cragmm_search.search import UnifiedSearchPipeline
 from utils import display_results, ensure_crag_cache_dir_is_configured
+from tokenizers import Tokenizer
 
 # Load environment variables
 load_dotenv()
@@ -45,6 +46,9 @@ DEFAULT_NUM_WORKERS = 8
 
 MIN_BATCH_SIZE = 1
 MAX_BATCH_SIZE = 16
+
+
+MAX_RESPONSE_LENGTH_IN_TOKENS = 75
 
 
 class CRAGTurnEvaluationResult(BaseModel):
@@ -81,6 +85,11 @@ class CRAGEvaluator:
         self.agent_response_map: dict[str, str] = {}
         self.all_turn_data: list[dict[str, any]] = []
         self.session_ids_evaluated: set[str] = set()
+        
+        self.tokenizer = Tokenizer.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
+        self.tokenizer.enable_truncation(max_length=MAX_RESPONSE_LENGTH_IN_TOKENS)
+
+
 
     @staticmethod
     def get_system_message() -> str:
@@ -200,6 +209,7 @@ class CRAGEvaluator:
     def generate_agent_responses(self, progress_callback: Callable[[int, int], None] = None) -> None:
         """
         Phase 1: Generate agent responses for each turn in the dataset.
+        Phase 1: Generate agent responses for each turn in the dataset.
 
         This method iterates over the dataset batches using the internal batch iterator and updates the evaluator's state
         with agent responses and turn data.
@@ -235,7 +245,8 @@ class CRAGEvaluator:
 
             # Generate responses for the current batch
             agent_responses = self.agent.batch_generate_response(queries, images, message_histories)
-
+            agent_responses = self.truncate_agent_responses(agent_responses) # Truncase each response to the maximum allowed length (75 tokens)
+            
             # Collect responses and add evaluation data
             for idx, interaction_id in enumerate(interaction_ids):
                 agent_response = agent_responses[idx]
@@ -406,6 +417,14 @@ class CRAGEvaluator:
             
         turn_evaluation_results, score_dictionaries = self.evaluate_agent_responses(self.all_turn_data, _evaluation_progress_callback)
         return turn_evaluation_results, score_dictionaries
+    
+    def truncate_agent_responses(self, agent_responses: list[str]) -> list[str]:
+        """
+        Truncate each agent response to the maximum allowed length.
+        """
+        encodings = self.tokenizer.encode_batch(agent_responses)
+        trimmed_agent_responses = [self.tokenizer.decode(enc.ids) for enc in encodings]
+        return trimmed_agent_responses    
 
 
 def main() -> None:
