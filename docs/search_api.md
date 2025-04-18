@@ -47,25 +47,24 @@ search_pipeline = UnifiedSearchPipeline(
 ### Search for images
 
 ```python
-# use image url as input
-image_url = "https://upload.wikimedia.org/wikipedia/commons/b/b2/The_Beekman_tower_1_%286214362763%29.jpg"
-results = search_pipeline(image_url, k = 2)
-assert results is not None, "No results found"
-print(f"Image search results for: '{image_url}'\n")
-for result in results:
-    print(result)
-    print('\n')
-
-# alternatively, use PIL image as input
+# use PIL image as input (alternatively, can use image_url as input)
+import requests
 from PIL import Image
+from io import BytesIO
+
 image_url = "https://upload.wikimedia.org/wikipedia/commons/b/b2/The_Beekman_tower_1_%286214362763%29.jpg"
-image = Image.open(requests.get(image_url).raw)
-results = search_pipeline(image, k = 2)
-assert results is not None, "No results found"
-print(f"Image search results for: '{image_url}'\n")
-for result in results:
-    print(result)
-    print('\n')
+headers = {"User-Agent": "CRAGBot/v0.0.1"}
+response = requests.get(image_url, stream=True, timeout=10, headers=headers)
+if response.status_code == 200:
+    image = Image.open(BytesIO(response.content))
+    results = search_pipeline(image, k = 2)
+    assert results is not None, "No results found"
+    print(f"Image search results for: '{image_url}'\n")
+    for result in results:
+        print(result)
+        print('\n')
+else:
+    print(f"Failed to retrieve image. Status code: {response.status_code}")
 ```
 
 #### Output
