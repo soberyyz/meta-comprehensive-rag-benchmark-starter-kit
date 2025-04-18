@@ -123,6 +123,7 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
     cd meta-crag-submission
     pip install -r requirements.txt
     ```
+**Note*: The installation of vLLM may depend on specific CUDA or PyTorch versions, so it is possible that `pip install -r requirements.txt` fails. 
 
 5. Write your own agent as described in [agents/README.md](agents/README.md).
 
