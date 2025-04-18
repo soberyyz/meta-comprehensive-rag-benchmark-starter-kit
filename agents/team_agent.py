@@ -20,15 +20,10 @@ from agents.retrieval.retrieval_for_competition import CompetitionRetriever
 
 
 # 图像处理包初始化
-# modelscope
-from transformers import (
-    AutoModelForCausalLM, 
-    AutoTokenizer,
-    pipeline
-)
 from PIL import Image
 import torch
 from loguru import logger
+from agents.utils_image.ovis_utils import OvisProcessor
 
 # 分割
 from agents.segment_images import SamEncoder, SamDecoder, segment_image_per_point
@@ -67,16 +62,7 @@ class TeamAgent(BaseAgent):
                 image_reranker_name="",
             )
             # 初始化Ovis2-1B多模态模型
-            self.ovis_model = AutoModelForCausalLM.from_pretrained(
-                f'{local_model_path}/Ovis2-1B',
-                torch_dtype=torch.bfloat16,
-                device_map="auto",
-                trust_remote_code=True
-            )
-            self.ovis_tokenizer = AutoTokenizer.from_pretrained(
-                f'{local_model_path}/Ovis2-1B',
-                trust_remote_code=True
-            )
+            self.ovis_model = OvisProcessor(f"{local_model_path}/Ovis2-1B")
         else:
             self.search_pipeline = UnifiedSearchPipeline(
             text_model_name="sentence-transformers/all-MiniLM-L6-v2",
@@ -92,16 +78,7 @@ class TeamAgent(BaseAgent):
             )
             
             # 初始化Ovis2-1B多模态模型
-            self.ovis_model = AutoModelForCausalLM.from_pretrained(
-                '/root/model_weight/Ovis2-1B',
-                torch_dtype=torch.bfloat16,
-                device_map="auto",
-                trust_remote_code=True
-            )
-            self.ovis_tokenizer = AutoTokenizer.from_pretrained(
-                '/root/model_weight/Ovis2-1B',
-                trust_remote_code=True
-            )
+            self.ovis_model = OvisProcessor("AIDC-AI/Ovis2-1B")
         # 初始化分割模型
         # TODO 修改segment_image_per_point
         # encoder_model = "onnx/efficientvit_sam_xl1_encoder.onnx"
@@ -127,37 +104,14 @@ class TeamAgent(BaseAgent):
             "<|start_header_id|>assistant<|end_header_id|>"
         )[-1].split("<|eot_id|>")[0]
         return model_answer
-
-    def _ovis_description(self, image, prompt):
-        """多模态描述生成模块"""
-        query = f"<image>\n{prompt}"
-        inputs = self.ovis_model.build_inputs(
-            query=query,
-            images=[image],
-            tokenizer=self.ovis_tokenizer
-        )
-        outputs = self.ovis_model.generate(
-            **inputs,
-            max_new_tokens=1024
-        )
-        return self.ovis_tokenizer.decode(
-            outputs[0], 
-            skip_special_tokens=True
-        )
     
-    def _get_image_content(self, image):
+    def _get_image_content(self, image, user_query):
         """综合图像描述生成"""
-        return self._ovis_description(
-            image=image,
-            prompt="Describe in detail the scene, objects, characteristics of people and their relationships in the image."
-        )
+        return self.ovis_model.get_image_content(image, user_query)
     
     def _get_image_text(self, image):
         """结构化文本提取"""
-        return self._ovis_description(
-                image=image,
-                prompt="Accurately extract all text from the given image, no details missed."
-            )
+        return self.ovis_model.get_image_text(image)
 
     def _get_web_search_text(self, web_page):
         web_search_text = ""
@@ -182,7 +136,7 @@ class TeamAgent(BaseAgent):
         web_texts = [self._get_web_search_text(result) for result in retrieval_content_from_api]
         return web_texts
 
-    def _get_image_retrieval_result(self, images, k, score_threshold=0.0):
+    def _get_image_retrieval_result(self, images, k, query, score_threshold=0.0):
         """
         retrieval_content_from_api:
         {
@@ -206,7 +160,7 @@ class TeamAgent(BaseAgent):
         if score_threshold > 0.0:
             retrieval_content_from_api = [result for result in retrieval_content_from_api if result["score"] > score_threshold]
         images = [result["url"] for result in retrieval_content_from_api]
-        image_mm_infos = [self._get_image_content(image) for image in images] # 由小多模态模型提取图片内容， TODO: 做成并发的@xiaoli
+        image_mm_infos = [self._get_image_content(image, query) for image in images] # 由小多模态模型提取图片内容， TODO: 做成并发的@xiaoli
         image_entity_infos = [] # mock api 返回的图片本身自带的内容
         for result in retrieval_content_from_api:
             entity = result["entities"]
@@ -236,7 +190,7 @@ class TeamAgent(BaseAgent):
         """
 
         # First call the LLM to generate some keywords for the image (for future RAG).
-        summarize_answer_image_content = self._get_image_content(image)
+        summarize_answer_image_content = self._get_image_content(image, query)
         summarize_answer_image_text = self._get_image_text(image)
         image_info = "The image content can be concluded as:\n"+summarize_answer_image_content + '\n\n'
         image_info += "The text in the image can be concluded as:\n"+summarize_answer_image_text
@@ -268,7 +222,7 @@ class TeamAgent(BaseAgent):
         logger.info(f"web_search_results: {web_search_results}")
 
         # call the image search mock API
-        search_results_from_image = self._get_image_retrieval_result(image, k=3)
+        search_results_from_image = self._get_image_retrieval_result(image, k=3, query=query)
         retrieval_image_mm_info, retrieval_image_entity_info = search_results_from_image
 
         context_str = "\n\n".join([retrieval_image_mm_info, retrieval_image_entity_info, web_search_results]) # TODO: 将所有来源进行集合@keke
