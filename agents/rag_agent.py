@@ -331,3 +331,265 @@ class SimpleRAGAgent(BaseAgent):
         responses = [output.outputs[0].text for output in outputs]
         print(f"Successfully generated {len(responses)} responses")
         return responses
+
+class SimpleRAGAgentImage(BaseAgent):
+    """
+    SimpleRAGAgent demonstrates the basic components you will need to create your 
+    RAG submission for the CRAG-MM benchmark, specifically for task 1 (Single-source Augmentation)
+    where only image search is allowed.
+    Note: This implementation is not tuned for performance, and is intended for demonstration purposes only.
+    
+    This agent enhances responses by retrieving relevant information through a search pipeline
+    and incorporating that context when generating answers. It follows a two-step approach:
+    1. First, retrieve similar images from the image search pipeline. 
+    2. Then, incorporate the metadata in the retrieved images to the final prompts, and generate responses. 
+    
+    The agent leverages batched processing at every stage to maximize efficiency.
+    
+    Note:
+        This agent requires a search_pipeline for RAG functionality. Without it,
+        the agent will raise a ValueError during initialization.
+    
+    Attributes:
+        search_pipeline (UnifiedSearchPipeline): Pipeline for searching relevant information.
+            Note that this search_pipeline is only for image search. 
+        model_name (str): Name of the Hugging Face model to use.
+        max_gen_len (int): Maximum generation length for responses.
+        llm (vllm.LLM): The vLLM model instance for inference.
+        tokenizer: The tokenizer associated with the model.
+    """
+
+    def __init__(
+        self, 
+        search_pipeline: UnifiedSearchPipeline, 
+        model_name: str = "meta-llama/Llama-3.2-11B-Vision-Instruct", 
+        max_gen_len: int = 64
+    ):
+        """
+        Initialize the RAG agent with the necessary components.
+        
+        Args:
+            search_pipeline (UnifiedSearchPipeline): A pipeline for searching web and image content.
+                Note: The web-search will be disabled in case of Task 1 (Single-source Augmentation) - so only image-search can be used in that case.
+                      Hence, this implementation of the RAG agent is suitable for Task 1 (Single-source Augmentation).
+            model_name (str): Hugging Face model name to use for vision-language processing.
+            max_gen_len (int): Maximum generation length for model outputs.
+            
+        Raises:
+            ValueError: If search_pipeline is None, as it's required for RAG functionality.
+        """        
+        super().__init__(search_pipeline)
+        
+        if search_pipeline is None:
+            raise ValueError("Search pipeline is required for RAG agent")
+            
+        self.model_name = model_name
+        self.max_gen_len = max_gen_len
+        self.initialize_models()
+    
+    def initialize_models(self):
+        """
+        Initialize the vLLM model and tokenizer with appropriate settings.
+        
+        This configures the model for vision-language tasks with optimized
+        GPU memory usage and restricts to one image per prompt, as 
+        Llama-3.2-Vision models do not handle multiple images well in a single prompt.
+
+        Note:
+            The limit_mm_per_prompt setting is critical as the current Llama vision models
+            struggle with multiple images in a single conversation.
+            Ref: https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct/discussions/43#66f98f742094ed9e5f5107d4
+        """
+        print(f"Initializing {self.model_name} with vLLM...")
+        
+        # Initialize the model with vLLM
+        self.llm = vllm.LLM(
+            self.model_name,
+            tensor_parallel_size=VLLM_TENSOR_PARALLEL_SIZE, 
+            gpu_memory_utilization=VLLM_GPU_MEMORY_UTILIZATION, 
+            max_model_len=MAX_MODEL_LEN,
+            max_num_seqs=MAX_NUM_SEQS,
+            trust_remote_code=True,
+            dtype="bfloat16",
+            enforce_eager=True,
+            limit_mm_per_prompt={
+                "image": 1 
+            } # In the CRAG-MM dataset, every conversation has at most 1 image
+        )
+        self.tokenizer = self.llm.get_tokenizer()
+        
+        print("Models loaded successfully")
+
+    def get_batch_size(self) -> int:
+        """
+        Determines the batch size used by the evaluator when calling batch_generate_response.
+        
+        The evaluator uses this value to determine how many queries to send in each batch.
+        Valid values are integers between 1 and 16.
+        
+        Returns:
+            int: The batch size, indicating how many queries should be processed together 
+                 in a single batch.
+        """
+        return AICROWD_SUBMISSION_BATCH_SIZE
+    
+    def retrieve_similar_images(self, images: List[Image.Image]) -> List[dict]:
+        """
+        Retrieve similar images from the image search pipeline, alongside metadata for the relevant images. 
+        Args: 
+            images (List[Image.Image]): List of images to retrieve similar images for. 
+        Returns: 
+            List[dict]: List of dictionaries, each containing the following keys: 
+                - 'image_url': URL of the similar image. 
+                - 'page_snippet': Metadata of the similar image. 
+        """
+        search_results_batch = []
+        for image in images:
+            results = self.search_pipeline(image, k=1)
+            search_results_batch.append(results)
+        return search_results_batch
+    
+
+    def prepare_rag_enhanced_inputs(
+        self, 
+        queries: List[str], 
+        images: List[Image.Image], 
+        similar_images: List[dict], 
+        message_histories: List[List[Dict[str, Any]]]
+    ) -> List[dict]:
+        """
+        Prepare RAG-enhanced inputs for the model by adding the metadata of the similar images to the final prompts.
+        
+        This method:
+        1. Add the metadata of the similar images to the final prompts.
+        
+        Args:
+            queries (List[str]): List of user questions.
+            images (List[Image.Image]): List of images to analyze.
+            image_summaries (List[str]): List of image summaries for search.
+            message_histories (List[List[Dict[str, Any]]]): List of conversation histories.
+            
+        Returns:
+            List[dict]: List of input dictionaries ready for the model.
+        """
+
+        inputs = []
+
+        # Prepare formatted inputs with RAG context for each query
+        for idx, (query, image, message_history, similar_image) in enumerate(
+            zip(queries, images, message_histories, similar_images)
+        ): 
+            # create system prompt with RAG guidelines 
+            SYSTEM_PROMPT = ("You are a helpful assistant that truthfully answers user questions about the provided image."
+                           "Keep your response concise and to the point. If you don't know the answer, respond with 'I don't know'.")
+            
+            # Add the metadata of the similar images to the final prompts, if available: 
+            rag_context = ''
+            if similar_images:
+                rag_context = 'By retrieving similar images, we found that the image may be related to the following information: \n'
+                for i, result in enumerate(similar_image):
+                    entities = result.get('entities', '')
+                    if entities:
+                        for entity in entities:
+                            rag_context += f"# Entity name: {entity['entity_name']}\n"
+                            if entity['entity_attributes'] is not None:
+                                rag_context += '# Entity attributes: \n'
+                                for attribute in entity['entity_attributes']:
+                                    rag_context += f"## {attribute}: {entity['entity_attributes'][attribute]}\n"
+            # Structure messages with image and RAG context
+            messages = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": [{"type": "image"}]}
+            ]
+
+            # Add conversation history for multi-turn conversations
+            if message_history:
+                messages = messages + message_history
+            
+            # Add RAG context as a separate user message, if available. 
+            if rag_context:
+                messages.append({"role": "user", "content": rag_context})
+            print(rag_context + '\n')
+            # Add the current query
+            messages.append({"role": "user", "content": query})
+
+            # Apply chat template
+            formatted_prompt = self.tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                tokenize=False
+            )
+
+            inputs.append({
+                "prompt": formatted_prompt,
+                "multi_modal_data": {
+                    "image": image
+                }
+            })
+        
+        return inputs
+
+
+            
+
+    def batch_generate_response(
+        self, 
+        queries: List[str], 
+        images: List[Image.Image], 
+        message_histories: List[List[Dict[str, Any]]]
+    ) -> List[str]:
+        """
+        Generate RAG-enhanced responses for a batch of queries with associated images.
+        
+        This method implements a complete RAG pipeline with efficient batch processing:
+        1. First, retrieve relevant images with the input images. 
+        2. Then, incorporate the metadata in the retrieved images to the final prompts
+        3. Finally, generate responses with the enhanced prompts. 
+        
+        Args:
+            queries (List[str]): List of user questions or prompts.
+            images (List[Image.Image]): List of PIL Image objects, one per query.
+                The evaluator will ensure that the dataset rows which have just
+                image_url are populated with the associated image.
+            message_histories (List[List[Dict[str, Any]]]): List of conversation histories,
+                one per query. Each history is a list of message dictionaries with
+                'role' and 'content' keys in the following format:
+                
+                - For single-turn conversations: Empty list []
+                - For multi-turn conversations: List of previous message turns in the format:
+                  [
+                    {"role": "user", "content": "first user message"},
+                    {"role": "assistant", "content": "first assistant response"},
+                    {"role": "user", "content": "follow-up question"},
+                    {"role": "assistant", "content": "follow-up response"},
+                    ...
+                  ]
+                
+        Returns:
+            List[str]: List of generated responses, one per input query.
+        """
+        print(f"Processing batch of {len(queries)} queries with RAG (image only)")
+
+        # Step 1: Retrieve relevant images with the input images. 
+        similar_images = self.retrieve_similar_images(images)
+
+        # Step 2: Incorporate the metadata in the retrieved images to the final prompts
+        rag_inputs = self.prepare_rag_enhanced_inputs(
+            queries, images, similar_images, message_histories
+        )
+
+        # Step 3: Generate responses with the enhanced prompts. 
+        print(f"Generating responses for {len(rag_inputs)} queries")
+        outputs = self.llm.generate(
+            rag_inputs,
+            sampling_params=vllm.SamplingParams(
+                temperature=0.1,
+                top_p=0.9,
+                max_tokens=MAX_GENERATION_TOKENS,
+                skip_special_tokens=True
+            )
+        )       
+        # Extract and return the generated responses
+        responses = [output.outputs[0].text for output in outputs]
+        print(f"Successfully generated {len(responses)} responses")
+        return responses
