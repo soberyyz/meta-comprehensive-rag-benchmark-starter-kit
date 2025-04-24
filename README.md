@@ -56,7 +56,7 @@ You can download the mock APIs with
 pip install -U cragmm-search-pipeline
 ```
 
-`agents/rag_agent.py` shows a sample usage of the APIs. 
+[docs/search_api.md](docs/search_api.md) contains the documentations to the mock APIs, and [agents/rag_agent.py](agents/rag_agent.py) shows a sample usage of the APIs. 
 
 # 👨‍💻👩‍💻 Tasks
 
@@ -123,6 +123,7 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
     cd meta-crag-submission
     pip install -r requirements.txt
     ```
+**Note**: The installation of vLLM may depend on specific CUDA or PyTorch versions, so it is possible that `pip install -r requirements.txt` fails. If that happens, please find an appropriate version on the [vLLM website](https://docs.vllm.ai/en/latest/). To run LLaMA-3.2-Vision, we need at least `vllm>=0.6.2`. 
 
 5. Write your own agent as described in [agents/README.md](agents/README.md).
 
@@ -136,6 +137,8 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
 
 Please follow the instructions in [docs/submission.md](docs/submission.md) to make your first submission.
 This also includes instructions on [specifying your software runtime](docs/submission.md#specifying-software-runtime-and-dependencies), [code structure](docs/submission.md#code-structure-guidelines), [submitting to different tracks](docs/submission.md#submitting-to-different-tracks).
+
+For detailed instructions on securely setting up your submissions as Public Gated Hugging Face models, please refer to [Using Gated Hugging Face Models in Your Submission 🔒](huggingface-gated-models.md).
 
 **Note**: **Remember to accept the Challenge Rules** on the challenge page, **and** the task page before making your first submission.
 

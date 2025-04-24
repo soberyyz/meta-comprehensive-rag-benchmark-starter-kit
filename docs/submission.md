@@ -60,32 +60,7 @@ In your repository’s root directory, create or update the `aicrowd.json` file 
 
   > The `hf_models` entries support parameters compatible with [`huggingface_hub.snapshot_download`](https://huggingface.co/docs/huggingface_hub/v0.30.2/en/package_reference/file_download#huggingface_hub.snapshot_download).
 
-### 2.2 Providing Access to Private Hugging Face Models 🔒
-
-If you use private Hugging Face models, you must explicitly grant access to the `aicrowd` account as follows:
-
-- **Create a dedicated Hugging Face organization** for your challenge participation:
-
-  1. Go to [Hugging Face](https://huggingface.co/) and create a new private organization (e.g., `your-team-cragmm`).
-  2. Add your team members to this organization.
-
-- **Grant Access**:
-
-  1. Add the [`aicrowd`](https://huggingface.co/aicrowd) Hugging Face user to your organization with **read access**.
-
-- **Specify the private model in `aicrowd.json`**:
-
-```json
-"hf_models": [
-    {
-        "repo_id": "your-team-cragmm/your-private-model",
-        "revision": "main"
-    }
-]
-```
-
-**Important**:
-- Failure to grant the `aicrowd` user access to your private model will cause your submission to fail.
+For detailed instructions on securely setting up your submissions as Public Gated Hugging Face models, please refer to [Using Gated Hugging Face Models in Your Submission 🔒](huggingface-gated-models.md).
 
 ### 2.3 requirements.txt 🗒️
 
