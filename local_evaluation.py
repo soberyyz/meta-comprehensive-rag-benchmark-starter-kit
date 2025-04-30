@@ -518,6 +518,19 @@ def main() -> None:
                 expand=False,
             )
         )
+    # Initialize OpenAI client if needed
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        console.print(
+            "[red]Error: OPENAI_API_KEY 環境変数エラー.[/red]"
+        )
+        exit(1)
+    openai_client = OpenAI(api_key=api_key)
+    if not args.disable_llm_judge:
+        console.print(
+            f"[bold magenta]Using semantic evaluation with model: {args.eval_model}[/bold magenta]"
+        )
+        openai_client = OpenAI()
 
     if args.num_conversations == -1:
         args.num_conversations = len(dataset[split_to_use])
