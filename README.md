@@ -38,6 +38,10 @@ The Retrieval-Augmented Generation (RAG) paradigm has expanded to accommodate mu
 
 CRAG-MM contains three parts of data: the image set, the QA set, and the contents for retrieval.
 
+The datasets can be accessed as follows:
+- **Single-Turn:** [https://huggingface.co/datasets/crag-mm-2025/crag-mm-single-turn-public](https://huggingface.co/datasets/crag-mm-2025/crag-mm-single-turn-public)
+- **Multi-Turn:** [https://huggingface.co/datasets/crag-mm-2025/crag-mm-multi-turn-public](https://huggingface.co/datasets/crag-mm-2025/crag-mm-multi-turn-public)
+
 ## 🖼️ Image set
 CRAG-MM contains two types of images: egocentric images and normal images. The egocentric images were collected using RayBan Meta Smart Glasses 4 from first-person perspective. The normal images were collected from publicly available images on the web.
 
@@ -49,10 +53,10 @@ The dataset includes a mock image search API and a mock web search API to simula
 
 You can download the mock APIs with 
 ```
-pip install cragmm-search-pipeline==0.2.8
+pip install -U cragmm-search-pipeline
 ```
 
-`agents/rag_agent.py` shows a sample usage of the APIs. 
+[docs/search_api.md](docs/search_api.md) contains the documentations to the mock APIs, and [agents/rag_agent.py](agents/rag_agent.py) shows a sample usage of the APIs. 
 
 # 👨‍💻👩‍💻 Tasks
 
@@ -67,7 +71,6 @@ Task #2 in addition provides a web search mock API as a second retrieval source.
 ## Task #3: Multi-Turn QA
 Task #3 tests the system's ability to conduct multi-turn conversations. Each conversation contains 2–6 turns. Except the first turn, questions in later turns may or may not need the image for answering the questions. Task #3 tests context understanding for smooth multi-turn conversations.
 
-**Note: Task #3 is yet open for submission.**
 
 # 📏 Evaluation Metrics
 
@@ -120,6 +123,7 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
     cd meta-crag-submission
     pip install -r requirements.txt
     ```
+**Note**: The installation of vLLM may depend on specific CUDA or PyTorch versions, so it is possible that `pip install -r requirements.txt` fails. If that happens, please find an appropriate version on the [vLLM website](https://docs.vllm.ai/en/latest/). To run LLaMA-3.2-Vision, we need at least `vllm>=0.6.2`. 
 
 5. Write your own agent as described in [agents/README.md](agents/README.md).
 
@@ -134,17 +138,18 @@ You can add your SSH Keys to your GitLab account by going to your profile settin
 Please follow the instructions in [docs/submission.md](docs/submission.md) to make your first submission.
 This also includes instructions on [specifying your software runtime](docs/submission.md#specifying-software-runtime-and-dependencies), [code structure](docs/submission.md#code-structure-guidelines), [submitting to different tracks](docs/submission.md#submitting-to-different-tracks).
 
+For detailed instructions on securely setting up your submissions as Public Gated Hugging Face models, please refer to [Using Gated Hugging Face Models in Your Submission 🔒](huggingface-gated-models.md).
+
 **Note**: **Remember to accept the Challenge Rules** on the challenge page, **and** the task page before making your first submission.
 
 ## 💻 What hardware does my code run on?
-All submissions will be run on a single G6e instance with an NVIDIA L40s GPU with 48GB of GPU memory on AWS. Please note that:
-- LLaMA 3.2 11B-Vision and Pixtral 12B in full precision can run directly
-- Llama 3.2 90B-Vision in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
-- NVIDIA L40s is not using the latest architectures and hence might not be compatible with certain acceleration toolkits, so please make sure the submitted solution is compatible with the configuration
+All submissions will be run on a single `g6e.2xlarge` instance with an `NVIDIA L40s GPU` with `48GB of GPU memory` on AWS. Please note that:
+- `LLaMA 3.2 11B-Vision` and `Pixtral 12B` in full precision can run directly
+- `Llama 3.2 90B-Vision` in full precision cannot be directly run on this GPU instance. Quantization or other techniques need to be applied to make the model runnable
 
 Moreover, the following restrictions will also be imposed:
 - Network connection will be disabled
-- Each example will have a time-out limit of 30 seconds
+- Each conversation-turn will have a time-out limit of 10 seconds, and a batch of N turns (as configured by you `.get_batch_size()` function) will have a timeout of `N * 10 seconds`. 
 - To encourage concise answers, each answer will be truncated to 75 bpe tokens in the auto-eval
 
 ## 🏁 Baseline
