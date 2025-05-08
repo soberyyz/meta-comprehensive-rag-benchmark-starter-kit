@@ -6,10 +6,13 @@ from PIL import Image
 from agents.base_agent import BaseAgent
 from cragmm_search.search import UnifiedSearchPipeline
 
-import vllm
 
+import vllm
+import os
+os.environ["HF_HUB_OFFLINE"] = "1"  # 强制离线
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 # Configuration constants
-AICROWD_SUBMISSION_BATCH_SIZE = 8
+AICROWD_SUBMISSION_BATCH_SIZE = 2
 
 # GPU utilization settings 
 # Change VLLM_TENSOR_PARALLEL_SIZE during local runs based on your available GPUs
@@ -19,7 +22,7 @@ AICROWD_SUBMISSION_BATCH_SIZE = 8
 
 #### Please ensure that when you submit, VLLM_TENSOR_PARALLEL_SIZE=1. 
 VLLM_TENSOR_PARALLEL_SIZE = 1 
-VLLM_GPU_MEMORY_UTILIZATION = 0.85 
+VLLM_GPU_MEMORY_UTILIZATION = 0.7 
 
 
 # These are model specific parameters to get the model to run on a single NVIDIA L40s GPU
@@ -58,7 +61,7 @@ class SimpleRAGAgent(BaseAgent):
     def __init__(
         self, 
         search_pipeline: UnifiedSearchPipeline, 
-        model_name: str = "meta-llama/Llama-3.2-11B-Vision-Instruct", 
+        model_name: str = "snapshots/a1b2c3d4", 
         max_gen_len: int = 64
     ):
         """
@@ -101,7 +104,10 @@ class SimpleRAGAgent(BaseAgent):
         
         # Initialize the model with vLLM
         self.llm = vllm.LLM(
-            self.model_name,
+            model=self.model_name,
+            tokenizer=self.model_name,
+            download_dir=None, 
+            hf_token=None,
             tensor_parallel_size=VLLM_TENSOR_PARALLEL_SIZE, 
             gpu_memory_utilization=VLLM_GPU_MEMORY_UTILIZATION, 
             max_model_len=MAX_MODEL_LEN,
@@ -183,7 +189,7 @@ class SimpleRAGAgent(BaseAgent):
         print(f"Generated {len(summaries)} image summaries")
         return summaries
     
-    def prepare_rag_enhanced_inputs(
+    def  prepare_rag_enhanced_inputs(
         self, 
         queries: List[str], 
         images: List[Image.Image], 

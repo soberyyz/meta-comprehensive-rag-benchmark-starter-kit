@@ -19,6 +19,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 import numpy as np
 import pandas as pd
 import tqdm
+import torch
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -32,6 +33,8 @@ from crag_batch_iterator import CRAGTurnBatchIterator
 from cragmm_search.search import UnifiedSearchPipeline
 from utils import display_results, ensure_crag_cache_dir_is_configured
 from tokenizers import Tokenizer
+
+
 
 # Load environment variables
 load_dotenv()
@@ -570,7 +573,6 @@ def main() -> None:
 
     if args.output_dir:
         evaluator.save_results(turn_evaluation_results, score_dictionaries, args.output_dir)
-
 
 if __name__ == "__main__":
     main()
