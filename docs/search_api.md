@@ -110,3 +110,21 @@ Web search results for: 'What to know about Andrew Cuomo?'
 ```
 
 Note: The Search APIs only return urls for images and webpages, instead of full contents. To get the full webpage contents and images, you will have to download it yourself. During the challenge, participants can assume that the connection to these urls are available. 
+
+#### Fetching the full page content
+
+We provide a helper class to fetch the complete contents of the page. 
+
+```python
+from crag_web_result_fetcher import WebSearchResult
+
+# Search the pipeline with a text query
+text_query='What to know about Andrew Cuomo?'
+results = search_pipeline(text_query, k=2)
+assert results is not None, "No results found"
+print(f"Web search results for: '{text_query}'\n")
+
+for result in results:
+    result = WebSearchResult(result)
+    print(result["page_content"])  # prints the full page contents
+```

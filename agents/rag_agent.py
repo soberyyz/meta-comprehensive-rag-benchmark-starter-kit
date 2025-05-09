@@ -7,6 +7,7 @@ from agents.base_agent import BaseAgent
 from cragmm_search.search import UnifiedSearchPipeline
 
 
+from crag_web_result_fetcher import WebSearchResult
 import vllm
 import os
 os.environ["HF_HUB_OFFLINE"] = "1"  # 强制离线
@@ -238,6 +239,20 @@ class SimpleRAGAgent(BaseAgent):
             if search_results:
                 rag_context = "Here is some additional information that may help you answer:\n\n"
                 for i, result in enumerate(search_results):
+                    # WebSearchResult is a helper class to get the full page content of a web search result.
+                    #
+                    # It first checks if the page content is already available in the cache. If not, it fetches  
+                    # the full page content and caches it.
+                    #
+                    # WebSearchResult adds `page_content` attribute to the result dictionary where the page 
+                    # content is stored. You can use it like a regular dictionary to fetch other attributes.
+                    #
+                    # result["page_content"] for complete page content, this is available only via WebSearchResult
+                    # result["page_url"] for page URL
+                    # result["page_name"] for page title
+                    # result["page_snippet"] for page snippet
+                    # result["score"] relavancy with the search query
+                    result = WebSearchResult(result)
                     snippet = result.get('page_snippet', '')
                     if snippet:
                         rag_context += f"[Info {i+1}] {snippet}\n\n"
